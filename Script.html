@@ -1,0 +1,618 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+//  CEVAZ — Script del Cliente (google.script.run ↔ Apps Script)
+// ═══════════════════════════════════════════════════════
+
+// ─────────────────────────────────────
+// ESTADO GLOBAL
+// ─────────────────────────────────────
+const App = {
+  usuario:     "",
+  rol:         "",           // "Administrador" | "SAC" | "Academia"
+  casos:       [],           // cache de casos del servidor
+  casoActivo:  null,         // objeto de caso seleccionado en el modal
+  graficos:    {},           // referencias Chart.js
+  ultimaActualizacion: null
+};
+
+// ─────────────────────────────────────
+// ACCESO Y SESIÓN
+// ─────────────────────────────────────
+
+function accederAlSistema() {
+  const nombre = document.getElementById("inputNombreAcceso").value.trim();
+  const rol    = document.getElementById("selectRol").value;
+
+  if (!nombre) { mostrarToast("Ingresa tu nombre para continuar.", "alerta"); return; }
+  if (!rol)    { mostrarToast("Selecciona tu perfil de acceso.", "alerta"); return; }
+
+  App.usuario = nombre;
+  App.rol     = rol;
+
+  document.getElementById("pantallaAcceso").style.display = "none";
+  const appEl = document.getElementById("appPrincipal");
+  appEl.classList.remove("app-oculta");
+  appEl.classList.add("app-visible");
+
+  document.getElementById("labelUsuario").textContent = nombre;
+  document.getElementById("badgeRol").textContent     = rol;
+
+  // Si es agente de departamento, ocultar filtro de departamento
+  if (rol !== "Administrador") {
+    document.getElementById("grupFiltroDep").style.display = "none";
+    document.getElementById("filtroDepartamento").value    = rol;
+    document.getElementById("tituloCasos").textContent =
+      `Casos — ${rol}`;
+  }
+
+  cargarCasos();
+  cargarEstadisticas();
+}
+
+function cerrarSesion() {
+  App.usuario = ""; App.rol = ""; App.casos = [];
+  document.getElementById("appPrincipal").classList.remove("app-visible");
+  document.getElementById("appPrincipal").classList.add("app-oculta");
+  document.getElementById("pantallaAcceso").style.display = "flex";
+  document.getElementById("inputNombreAcceso").value = "";
+  document.getElementById("selectRol").value = "";
+}
+
+// ─────────────────────────────────────
+// NAVEGACIÓN POR TABS
+// ─────────────────────────────────────
+
+function cambiarTab(tabId) {
+  document.querySelectorAll(".tab-contenido").forEach(s => s.classList.remove("tab-visible"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("tab-activo"));
+
+  document.getElementById("tab-" + tabId).classList.add("tab-visible");
+  document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add("tab-activo");
+
+  if (tabId === "analitica") cargarEstadisticas();
+}
+
+// ─────────────────────────────────────
+// CARGA DE DATOS
+// ─────────────────────────────────────
+
+function recargarDatos() {
+  App.casos = [];
+  cargarCasos();
+  cargarEstadisticas();
+}
+
+function cargarCasos() {
+  mostrarCarga(true);
+
+  const filtros = obtenerFiltros();
+
+  google.script.run
+    .withSuccessHandler(recibirCasos)
+    .withFailureHandler(err => {
+      mostrarCarga(false);
+      mostrarToast("Error al cargar casos: " + err.message, "error");
+    })
+    .getCasos(filtros);
+}
+
+function recibirCasos(casos) {
+  App.casos = casos || [];
+  App.ultimaActualizacion = new Date();
+
+  mostrarCarga(false);
+  actualizarKPIs(App.casos);
+  renderizarTabla(App.casos);
+
+  const metaEl = document.getElementById("metaActualizacion");
+  if (metaEl) {
+    metaEl.textContent = "Actualizado: " + App.ultimaActualizacion.toLocaleTimeString("es-VE");
+  }
+}
+
+function aplicarFiltros() {
+  const filtros = obtenerFiltros();
+
+  google.script.run
+    .withSuccessHandler(recibirCasos)
+    .withFailureHandler(err => mostrarToast("Error al filtrar: " + err.message, "error"))
+    .getCasos(filtros);
+}
+
+function obtenerFiltros() {
+  return {
+    sede:         document.getElementById("filtroSede")?.value || "Todos",
+    departamento: document.getElementById("filtroDepartamento")?.value || "Todos",
+    estado:       document.getElementById("filtroEstado")?.value || "Todos"
+  };
+}
+
+// ─────────────────────────────────────
+// KPIs
+// ─────────────────────────────────────
+
+function actualizarKPIs(casos) {
+  const total     = casos.length;
+  const pendiente = casos.filter(c => c.estado === "Pendiente").length;
+  const proceso   = casos.filter(c => c.estado === "En Proceso").length;
+  const resuelto  = casos.filter(c => c.estado === "Resuelto").length;
+
+  animarNumero("kpiTotal",    total);
+  animarNumero("kpiPendiente",pendiente);
+  animarNumero("kpiProceso",  proceso);
+  animarNumero("kpiResuelto", resuelto);
+}
+
+function animarNumero(id, destino) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const inicio = parseInt(el.textContent) || 0;
+  const pasos  = 20;
+  let paso = 0;
+  const intervalo = setInterval(() => {
+    paso++;
+    el.textContent = Math.round(inicio + (destino - inicio) * (paso / pasos));
+    if (paso >= pasos) { el.textContent = destino; clearInterval(intervalo); }
+  }, 20);
+}
+
+// ─────────────────────────────────────
+// TABLA DE CASOS
+// ─────────────────────────────────────
+
+function renderizarTabla(casos) {
+  const tbody    = document.getElementById("cuerpoCasos");
+  const vacioEl  = document.getElementById("estadoVacio");
+  const tablaEl  = document.getElementById("tablaWrapper");
+
+  tbody.innerHTML = "";
+
+  if (!casos || casos.length === 0) {
+    vacioEl.classList.remove("oculto");
+    tablaEl.classList.add("oculto");
+    return;
+  }
+
+  vacioEl.classList.add("oculto");
+  tablaEl.classList.remove("oculto");
+
+  casos.forEach(caso => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong style="color:var(--azul-claro);font-size:.8rem">${esc(caso.idCaso)}</strong></td>
+      <td>${esc(caso.fechaRegistro)}</td>
+      <td title="${esc(caso.nombreAlumno)}">${esc(truncar(caso.nombreAlumno, 22))}</td>
+      <td>${esc(truncar(caso.sede.replace("CEVAZ ", ""), 16))}</td>
+      <td title="${esc(caso.areaPrograma)}">${esc(truncar(caso.areaPrograma, 18))}</td>
+      <td><span class="badge badge-${caso.departamento.toLowerCase()}">${esc(caso.departamento)}</span></td>
+      <td><span class="badge ${caso.tipoPlanteamiento.includes("QUEJA") ? "badge-queja" : "badge-sugerencia"}">
+        ${caso.tipoPlanteamiento.includes("QUEJA") ? "Queja" : "Sugerencia"}
+      </span></td>
+      <td><span class="badge ${badgeEstado(caso.estado)}">${esc(caso.estado)}</span></td>
+      <td>${esc(truncar(caso.personal, 18)) || '<span style="color:var(--texto-extra)">—</span>'}</td>
+      <td class="acciones-celda">${generarBotonesAccion(caso)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function generarBotonesAccion(caso) {
+  let html = `<button class="btn-tabla btn-tabla-ver" onclick="abrirDetalle(${caso.fila})">Ver</button>`;
+
+  const esMiDep = App.rol === "Administrador" || caso.departamento === App.rol;
+
+  if (esMiDep) {
+    if (caso.estado === "Pendiente") {
+      html += `<button class="btn-tabla btn-tabla-tomar" onclick="abrirModalTomar(${caso.fila})">Tomar</button>`;
+    } else if (caso.estado === "En Proceso") {
+      html += `<button class="btn-tabla btn-tabla-resolver" onclick="abrirModalResolver(${caso.fila})">Resolver</button>`;
+    }
+  }
+  return html;
+}
+
+// ─────────────────────────────────────
+// BÚSQUEDA LOCAL
+// ─────────────────────────────────────
+
+function buscarCasos() {
+  const query = document.getElementById("inputBusqueda").value.toLowerCase().trim();
+  if (!query) { renderizarTabla(App.casos); return; }
+
+  const filtrados = App.casos.filter(c =>
+    c.nombreAlumno.toLowerCase().includes(query)  ||
+    c.idCaso.toLowerCase().includes(query)        ||
+    c.areaPrograma.toLowerCase().includes(query)  ||
+    c.idAlumno.toString().toLowerCase().includes(query) ||
+    c.sede.toLowerCase().includes(query)          ||
+    c.descripcion.toLowerCase().includes(query)
+  );
+  renderizarTabla(filtrados);
+}
+
+// ─────────────────────────────────────
+// MODAL — VER DETALLE
+// ─────────────────────────────────────
+
+function abrirDetalle(filaNum) {
+  const caso = App.casos.find(c => c.fila === filaNum);
+  if (!caso) return;
+  App.casoActivo = caso;
+
+  const esMiDep = App.rol === "Administrador" || caso.departamento === App.rol;
+
+  document.getElementById("modalTitulo").textContent = `Caso ${caso.idCaso}`;
+
+  document.getElementById("modalCuerpo").innerHTML = `
+    <div class="detalle-grid">
+      <div><p class="detalle-campo">Alumno</p><p class="detalle-valor">${esc(caso.nombreAlumno)}</p></div>
+      <div><p class="detalle-campo">ID Alumno</p><p class="detalle-valor">${esc(caso.idAlumno) || "—"}</p></div>
+      <div><p class="detalle-campo">Fecha de Registro</p><p class="detalle-valor">${esc(caso.fechaRegistro)}</p></div>
+      <div><p class="detalle-campo">Estado</p><p class="detalle-valor"><span class="badge ${badgeEstado(caso.estado)}">${esc(caso.estado)}</span></p></div>
+      <div><p class="detalle-campo">Sede</p><p class="detalle-valor">${esc(caso.sede)}</p></div>
+      <div><p class="detalle-campo">Área / Programa</p><p class="detalle-valor">${esc(caso.areaPrograma)}</p></div>
+      <div><p class="detalle-campo">Departamento</p><p class="detalle-valor"><span class="badge badge-${caso.departamento.toLowerCase()}">${esc(caso.departamento)}</span></p></div>
+      <div><p class="detalle-campo">Tipo</p><p class="detalle-valor">${esc(caso.tipoPlanteamiento)}</p></div>
+      <div><p class="detalle-campo">Nivel</p><p class="detalle-valor">${esc(caso.nivel) || "—"}</p></div>
+      <div><p class="detalle-campo">Categoría</p><p class="detalle-valor">${esc(caso.categoriaCurso) || "—"}</p></div>
+      <div><p class="detalle-campo">Profesor</p><p class="detalle-valor">${esc(caso.profesor) || "—"}</p></div>
+      <div><p class="detalle-campo">Horario</p><p class="detalle-valor">${esc(caso.horario) || "—"}</p></div>
+      <div><p class="detalle-campo">Email Contacto</p><p class="detalle-valor">${esc(caso.emailContacto) || "—"}</p></div>
+      <div><p class="detalle-campo">Teléfono</p><p class="detalle-valor">${esc(caso.telefono) || "—"}</p></div>
+      ${caso.personal ? `<div><p class="detalle-campo">Atendido por</p><p class="detalle-valor">${esc(caso.personal)}</p></div>` : ""}
+      ${caso.fechaResolucion ? `<div><p class="detalle-campo">Fecha Resolución</p><p class="detalle-valor">${esc(caso.fechaResolucion)}</p></div>` : ""}
+      ${caso.tiempoRespuesta ? `<div><p class="detalle-campo">Tiempo de Respuesta</p><p class="detalle-valor">${esc(caso.tiempoRespuesta)}</p></div>` : ""}
+    </div>
+    <p class="detalle-campo">Descripción del caso</p>
+    <div class="detalle-descripcion">${esc(caso.descripcion)}</div>
+    ${caso.accionSolicitada ? `
+      <p class="detalle-campo" style="margin-top:14px">Acción solicitada</p>
+      <div class="detalle-descripcion" style="border-left-color:var(--dorado)">${esc(caso.accionSolicitada)}</div>
+    ` : ""}
+    ${caso.comentarios ? `
+      <hr class="modal-separador">
+      <p class="detalle-campo">Comentarios de resolución</p>
+      <div class="detalle-descripcion" style="border-left-color:var(--verde)">${esc(caso.comentarios)}</div>
+    ` : ""}
+  `;
+
+  const pie = document.getElementById("modalPie");
+  pie.innerHTML = `<button class="btn btn-secundario" onclick="cerrarModal()">Cerrar</button>`;
+
+  if (esMiDep) {
+    if (caso.estado === "Pendiente") {
+      pie.innerHTML += `<button class="btn btn-accion" onclick="abrirModalTomar(${caso.fila})">Tomar caso</button>`;
+    } else if (caso.estado === "En Proceso") {
+      pie.innerHTML += `<button class="btn btn-exito" onclick="abrirModalResolver(${caso.fila})">Marcar como Resuelto</button>`;
+    }
+  }
+
+  abrirModal();
+}
+
+// ─────────────────────────────────────
+// MODAL — TOMAR CASO
+// ─────────────────────────────────────
+
+function abrirModalTomar(filaNum) {
+  const caso = App.casos.find(c => c.fila === filaNum);
+  if (!caso) return;
+  App.casoActivo = caso;
+
+  document.getElementById("modalTitulo").textContent = "Tomar Caso";
+  document.getElementById("modalCuerpo").innerHTML = `
+    <p style="margin-bottom:16px;color:var(--texto-suave);font-size:.9rem">
+      Confirma que tomarás el caso <strong>${esc(caso.idCaso)}</strong> de <strong>${esc(caso.nombreAlumno)}</strong>.
+    </p>
+    <div class="campo-grupo">
+      <label class="campo-label" for="inputPersonalTomar">Tu nombre completo</label>
+      <input type="text" id="inputPersonalTomar" class="campo-input"
+        value="${esc(App.usuario)}" placeholder="Nombre del agente que toma el caso">
+    </div>
+  `;
+  document.getElementById("modalPie").innerHTML = `
+    <button class="btn btn-secundario" onclick="cerrarModal()">Cancelar</button>
+    <button class="btn btn-accion" id="btnConfirmarTomar" onclick="confirmarTomarCaso()">
+      Confirmar — Tomar Caso
+    </button>
+  `;
+  abrirModal();
+}
+
+function confirmarTomarCaso() {
+  const personal = document.getElementById("inputPersonalTomar").value.trim();
+  if (!personal) { mostrarToast("Ingresa tu nombre.", "alerta"); return; }
+
+  const btn = document.getElementById("btnConfirmarTomar");
+  btn.disabled = true;
+  btn.textContent = "Guardando…";
+
+  google.script.run
+    .withSuccessHandler(res => {
+      cerrarModal();
+      if (res.exito) {
+        mostrarToast(res.mensaje, "exito");
+        actualizarCasoEnCache(App.casoActivo.fila, { estado: res.estado, personal: res.personal });
+        renderizarTabla(App.casos);
+        actualizarKPIs(App.casos);
+      } else {
+        mostrarToast(res.mensaje, "error");
+      }
+    })
+    .withFailureHandler(err => {
+      btn.disabled = false; btn.textContent = "Confirmar — Tomar Caso";
+      mostrarToast("Error del servidor: " + err.message, "error");
+    })
+    .tomarCaso(App.casoActivo.fila, personal);
+}
+
+// ─────────────────────────────────────
+// MODAL — RESOLVER CASO
+// ─────────────────────────────────────
+
+function abrirModalResolver(filaNum) {
+  const caso = App.casos.find(c => c.fila === filaNum);
+  if (!caso) return;
+  App.casoActivo = caso;
+
+  document.getElementById("modalTitulo").textContent = "Resolver Caso";
+  document.getElementById("modalCuerpo").innerHTML = `
+    <p style="margin-bottom:16px;color:var(--texto-suave);font-size:.9rem">
+      Cierra el caso <strong>${esc(caso.idCaso)}</strong>. Esta acción es permanente.
+    </p>
+    <div class="campo-grupo">
+      <label class="campo-label" for="inputPersonalResolver">Tu nombre completo</label>
+      <input type="text" id="inputPersonalResolver" class="campo-input"
+        value="${esc(caso.personal || App.usuario)}" placeholder="Nombre del agente que resolvió">
+    </div>
+    <div class="campo-grupo">
+      <label class="campo-label" for="textareaComentarios">
+        Comentarios de solución <span style="color:var(--rojo)">*</span>
+      </label>
+      <textarea id="textareaComentarios" class="campo-input"
+        rows="4"
+        placeholder="Describe detalladamente la solución aplicada…"
+        style="resize:vertical;min-height:90px"></textarea>
+    </div>
+  `;
+  document.getElementById("modalPie").innerHTML = `
+    <button class="btn btn-secundario" onclick="cerrarModal()">Cancelar</button>
+    <button class="btn btn-exito" id="btnConfirmarResolver" onclick="confirmarResolverCaso()">
+      Marcar como Resuelto
+    </button>
+  `;
+  abrirModal();
+}
+
+function confirmarResolverCaso() {
+  const personal    = document.getElementById("inputPersonalResolver").value.trim();
+  const comentarios = document.getElementById("textareaComentarios").value.trim();
+
+  if (!personal)    { mostrarToast("Ingresa tu nombre.", "alerta"); return; }
+  if (!comentarios) { mostrarToast("Los comentarios son obligatorios.", "alerta"); return; }
+
+  const btn = document.getElementById("btnConfirmarResolver");
+  btn.disabled = true;
+  btn.textContent = "Guardando…";
+
+  google.script.run
+    .withSuccessHandler(res => {
+      cerrarModal();
+      if (res.exito) {
+        mostrarToast(res.mensaje, "exito");
+        actualizarCasoEnCache(App.casoActivo.fila, {
+          estado:          res.estado,
+          personal:        res.personal,
+          fechaResolucion: res.fechaResolucion,
+          tiempoRespuesta: res.tiempoRespuesta,
+          comentarios:     comentarios
+        });
+        renderizarTabla(App.casos);
+        actualizarKPIs(App.casos);
+      } else {
+        mostrarToast(res.mensaje, "error");
+      }
+    })
+    .withFailureHandler(err => {
+      btn.disabled = false; btn.textContent = "Marcar como Resuelto";
+      mostrarToast("Error del servidor: " + err.message, "error");
+    })
+    .resolverCaso(App.casoActivo.fila, personal, comentarios);
+}
+
+// ─────────────────────────────────────
+// CONTROL DEL MODAL
+// ─────────────────────────────────────
+
+function abrirModal() {
+  document.getElementById("modalFondo").classList.remove("oculto");
+  document.body.style.overflow = "hidden";
+}
+function cerrarModal() {
+  document.getElementById("modalFondo").classList.add("oculto");
+  document.body.style.overflow = "";
+  App.casoActivo = null;
+}
+function cerrarModalSiFondo(e) {
+  if (e.target.id === "modalFondo") cerrarModal();
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarModal(); });
+
+// ─────────────────────────────────────
+// ANALÍTICA — GRÁFICOS
+// ─────────────────────────────────────
+
+function cargarEstadisticas() {
+  google.script.run
+    .withSuccessHandler(renderizarGraficos)
+    .withFailureHandler(err => mostrarToast("Error al cargar estadísticas: " + err.message, "error"))
+    .getEstadisticas();
+}
+
+function renderizarGraficos(stats) {
+  if (!stats || stats.error) return;
+
+  const COLORES = {
+    azul:   "#2D7DD2",
+    dorado: "#C9973A",
+    verde:  "#1A9E6B",
+    naranja:"#D97706",
+    rojo:   "#C0392B",
+    morado: "#6B46C1",
+    celeste:"#0891B2"
+  };
+  const PALETA = [COLORES.azul, COLORES.dorado, COLORES.verde, COLORES.naranja, COLORES.rojo, COLORES.morado, COLORES.celeste];
+
+  const opcBase = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: { legend: { labels: { font: { family: "'Inter', sans-serif", size: 12 }, boxWidth: 12 } } }
+  };
+
+  // 1. Por Estado (doughnut)
+  crearGrafico("graficoPorEstado", "doughnut", {
+    labels: ["Pendiente", "En Proceso", "Resuelto"],
+    datasets: [{
+      data: [
+        stats.porEstado["Pendiente"]  || 0,
+        stats.porEstado["En Proceso"] || 0,
+        stats.porEstado["Resuelto"]   || 0
+      ],
+      backgroundColor: [COLORES.naranja, COLORES.azul, COLORES.verde],
+      borderWidth: 2,
+      borderColor: "#fff"
+    }]
+  }, { ...opcBase, cutout: "65%" });
+
+  // 2. Por Departamento (bar)
+  crearGrafico("graficoDepartamento", "bar", {
+    labels: Object.keys(stats.porDepartamento),
+    datasets: [{
+      label: "Casos",
+      data: Object.values(stats.porDepartamento),
+      backgroundColor: [COLORES.morado, COLORES.azul],
+      borderRadius: 6
+    }]
+  }, { ...opcBase, plugins: { ...opcBase.plugins, legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } });
+
+  // 3. Por Sede (pie)
+  const sedesKeys = Object.keys(stats.porSede);
+  crearGrafico("graficoSede", "pie", {
+    labels: sedesKeys.map(s => s.replace("CEVAZ ", "")),
+    datasets: [{
+      data: Object.values(stats.porSede),
+      backgroundColor: PALETA.slice(0, sedesKeys.length),
+      borderWidth: 2,
+      borderColor: "#fff"
+    }]
+  }, opcBase);
+
+  // 4. Por Área (bar horizontal)
+  const areasKeys = Object.keys(stats.porArea).sort((a,b) => stats.porArea[b] - stats.porArea[a]);
+  crearGrafico("graficoArea", "bar", {
+    labels: areasKeys,
+    datasets: [{
+      label: "Casos",
+      data: areasKeys.map(k => stats.porArea[k]),
+      backgroundColor: COLORES.azul + "CC",
+      borderColor: COLORES.azul,
+      borderWidth: 1,
+      borderRadius: 4
+    }]
+  }, { ...opcBase,
+    indexAxis: "y",
+    plugins: { ...opcBase.plugins, legend: { display: false } },
+    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  });
+
+  // 5. Por Nivel (bar)
+  const nivelesKeys = Object.keys(stats.porNivel).sort();
+  crearGrafico("graficoNivel", "bar", {
+    labels: nivelesKeys,
+    datasets: [{
+      label: "Casos",
+      data: nivelesKeys.map(k => stats.porNivel[k]),
+      backgroundColor: COLORES.dorado + "BB",
+      borderColor: COLORES.dorado,
+      borderWidth: 1,
+      borderRadius: 4
+    }]
+  }, { ...opcBase,
+    plugins: { ...opcBase.plugins, legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  });
+
+  // 6. Tiempo Promedio por Departamento (bar)
+  const depsTiempo = Object.keys(stats.tiempoPromedioHoras);
+  crearGrafico("graficoTiempo", "bar", {
+    labels: depsTiempo,
+    datasets: [{
+      label: "Horas promedio",
+      data: depsTiempo.map(d => stats.tiempoPromedioHoras[d]),
+      backgroundColor: [COLORES.morado + "BB", COLORES.celeste + "BB"],
+      borderColor:     [COLORES.morado, COLORES.celeste],
+      borderWidth: 1,
+      borderRadius: 6
+    }]
+  }, { ...opcBase,
+    plugins: { ...opcBase.plugins, legend: { display: false } },
+    scales: { y: { beginAtZero: true, title: { display: true, text: "Horas" } } }
+  });
+}
+
+function crearGrafico(canvasId, tipo, datos, opciones) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  if (App.graficos[canvasId]) { App.graficos[canvasId].destroy(); }
+  App.graficos[canvasId] = new Chart(canvas.getContext("2d"), {
+    type: tipo, data: datos, options: opciones
+  });
+}
+
+// ─────────────────────────────────────
+// HELPERS DE UI
+// ─────────────────────────────────────
+
+function mostrarCarga(estado) {
+  document.getElementById("estadoCarga").classList.toggle("oculto", !estado);
+  if (estado) {
+    document.getElementById("estadoVacio").classList.add("oculto");
+    document.getElementById("tablaWrapper").classList.add("oculto");
+  }
+}
+
+function mostrarToast(mensaje, tipo = "info") {
+  const contenedor = document.getElementById("toastContainer");
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${tipo}`;
+  toast.textContent = mensaje;
+  contenedor.appendChild(toast);
+  setTimeout(() => toast.remove(), 3600);
+}
+
+function actualizarCasoEnCache(filaNum, cambios) {
+  const idx = App.casos.findIndex(c => c.fila === filaNum);
+  if (idx !== -1) Object.assign(App.casos[idx], cambios);
+}
+
+function badgeEstado(estado) {
+  const map = { "Pendiente": "badge-pendiente", "En Proceso": "badge-en-proceso", "Resuelto": "badge-resuelto" };
+  return map[estado] || "badge-pendiente";
+}
+
+function esc(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function truncar(str, max) {
+  if (!str) return "";
+  return str.length > max ? str.slice(0, max) + "…" : str;
+}
+</script>
