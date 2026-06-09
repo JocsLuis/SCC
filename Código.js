@@ -8,7 +8,7 @@ const CONFIG = {
   SHEET_NAME: "Respuestas de formulario 1", // Ajusta si el nombre difiere
   SPREADSHEET_ID: "", // Dejar vacío para usar el Spreadsheet activo (recomendado)
 
-  // Mapeo de columnas a índice base-0
+  // Mapeo de columnas a índice base-0 pruebaaaa
   COLS: {
     MARCA_TEMPORAL:       0,  // A
     EMAIL_GOOGLE:         1,  // B
