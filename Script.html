@@ -13,7 +13,8 @@ const App = {
   casos:       [],           // cache de casos del servidor
   casoActivo:  null,         // objeto de caso seleccionado en el modal
   graficos:    {},           // referencias Chart.js
-  ultimaActualizacion: null
+  ultimaActualizacion: null,
+  timerId:     null          // referencia al interval de auto-refresh
 };
 
 // ─────────────────────────────────────
@@ -48,9 +49,20 @@ function accederAlSistema() {
 
   cargarCasos();
   cargarEstadisticas();
+
+  // Auto-refresh cada 15 minutos
+  if (App.timerId) clearInterval(App.timerId);
+  App.timerId = setInterval(() => {
+    cargarCasos();
+    cargarEstadisticas();
+  }, 15 * 60 * 1000);
 }
 
 function cerrarSesion() {
+  if (App.timerId) {
+    clearInterval(App.timerId);
+    App.timerId = null;
+  }
   App.usuario = ""; App.rol = ""; App.casos = [];
   document.getElementById("appPrincipal").classList.remove("app-visible");
   document.getElementById("appPrincipal").classList.add("app-oculta");

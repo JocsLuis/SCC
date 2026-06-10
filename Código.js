@@ -6,7 +6,7 @@
 // --- CONFIGURACIÓN GLOBAL ---
 const CONFIG = {
   SHEET_NAME: "Respuestas de formulario 1", // Ajusta si el nombre difiere
-  SPREADSHEET_ID: "", // Dejar vacío para usar el Spreadsheet activo (recomendado)
+  SPREADSHEET_ID: "1Q9HRlVl8-Ryn1PJeOxBAhx2DMf6qIO2LgqxLpKGI7HI", // Dejar vacío para usar el Spreadsheet activo (recomendado)
 
   // Mapeo de columnas a índice base-0
   COLS: {
