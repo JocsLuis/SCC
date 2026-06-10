@@ -14,7 +14,7 @@
   <div id="pantallaAcceso" class="pantalla-acceso">
     <div class="acceso-card">
       <div class="acceso-logo">
-        <span class="logo-sigla">CEVAZ</span>
+        <span class="logo-sigla">CEV</span><span class="logo-az">AZ</span>
       </div>
       <p class="acceso-subtitulo">Sistema de Gestión de Casos</p>
       <div class="acceso-form">
@@ -70,27 +70,24 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         Tablero
       </button>
-
+      <button class="tab-btn" data-tab="casos" onclick="cambiarTab('casos')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Casos
+      </button>
       <button class="tab-btn" data-tab="analitica" onclick="cambiarTab('analitica')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         Analítica
       </button>
     </nav>
 
-    <!-- ─── TAB: TABLERO (vista unificada) ─── -->
+    <!-- ─── TAB: TABLERO ─── -->
     <section id="tab-tablero" class="tab-contenido tab-visible">
       <div class="seccion-header">
-        <h2 class="seccion-titulo" id="tituloCasos">Lista de Casos</h2>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="buscador-wrap">
-            <svg class="buscador-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="inputBusqueda" class="buscador-input" placeholder="Buscar por alumno, ID, área..." oninput="buscarCasos()">
-          </div>
-          <button class="btn btn-secundario btn-sm" onclick="recargarDatos()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            Actualizar
-          </button>
-        </div>
+        <h2 class="seccion-titulo">Resumen del día</h2>
+        <button class="btn btn-secundario btn-sm" onclick="recargarDatos()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Actualizar
+        </button>
       </div>
 
       <!-- KPI CARDS -->
@@ -143,6 +140,17 @@
           </select>
         </div>
       </div>
+    </section>
+
+    <!-- ─── TAB: CASOS ─── -->
+    <section id="tab-casos" class="tab-contenido">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo" id="tituloCasos">Lista de Casos</h2>
+        <div class="buscador-wrap">
+          <svg class="buscador-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="inputBusqueda" class="buscador-input" placeholder="Buscar por alumno, ID, área..." oninput="buscarCasos()">
+        </div>
+      </div>
 
       <!-- ESTADO DE CARGA -->
       <div id="estadoCarga" class="estado-carga">
@@ -175,8 +183,6 @@
         </table>
       </div>
     </section>
-
-
 
     <!-- ─── TAB: ANALÍTICA ─── -->
     <section id="tab-analitica" class="tab-contenido">
