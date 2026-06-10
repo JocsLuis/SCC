@@ -42,7 +42,8 @@ const CONFIG = {
     "Plataforma Virtual"
   ],
 
-  // Áreas que pertenecen al departamento "SAC"
+  // Áreas que pertenecen al departamento "SAC" (referencia documental)
+  // La asignación usa AREAS_ACADEMIA; todo lo que no coincide va a SAC
   AREAS_SAC: [
     "Servicio al Estudiante",
     "Inscripciones",
@@ -97,6 +98,14 @@ function getSheet_() {
   const ss = CONFIG.SPREADSHEET_ID
     ? SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID)
     : SpreadsheetApp.getActiveSpreadsheet();
+
+  if (!ss) {
+    throw new Error(
+      "No se pudo acceder al spreadsheet. " +
+      "Establece CONFIG.SPREADSHEET_ID con el ID de tu sheet " +
+      "(lo encuentras en la URL: docs.google.com/spreadsheets/d/***ID***/edit)."
+    );
+  }
 
   const sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
 
@@ -155,47 +164,36 @@ function generarIdCaso_(fecha, fila) {
 function inicializarColumnasControl() {
   const sheet = getSheet_();
   const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return; // Sin datos
+  if (lastRow < 2) return "Sin datos para inicializar.";
 
-  const TOTAL_COLS_CONTROL = 7; // P hasta V = columnas 16 a 22 (base-0: 15–21)
-  const dataRange = sheet.getRange(2, 1, lastRow - 1, 22); // Filas de datos, 22 columnas
-  const data = dataRange.getValues();
+  // Leer datos y bloque de control existente en una sola llamada cada uno
+  const data = sheet.getRange(2, 1, lastRow - 1, 22).getValues();
+  const controlData = sheet.getRange(2, 16, lastRow - 1, 7).getValues();
 
-  const updates = [];
-  const rowsToUpdate = [];
+  let contador = 0;
 
   data.forEach((fila, i) => {
-    const sheetRow = i + 2; // Fila real en el sheet (encabezado en fila 1)
-    const idCasoExistente = fila[CONFIG.COLS.ID_CASO];
-
-    // Solo inicializar si la columna P está vacía
-    if (!idCasoExistente) {
+    // Solo inicializar si la columna P (ID_CASO) está vacía
+    if (!controlData[i][0]) {
       const marcaTemporal = fila[CONFIG.COLS.MARCA_TEMPORAL];
       const area          = fila[CONFIG.COLS.AREA_PROGRAMA];
-      const idCaso        = generarIdCaso_(marcaTemporal, sheetRow);
+      const idCaso        = generarIdCaso_(marcaTemporal, i + 2);
       const departamento  = asignarDepartamento_(area);
 
-      // Columnas P-V: [ID_CASO, DEPARTAMENTO, ESTADO, PERSONAL, FECHA_RES, TIEMPO, COMENTARIOS]
-      const controlRow = [
+      controlData[i] = [
         idCaso,
         departamento,
         CONFIG.ESTADOS.PENDIENTE,
-        "",   // Personal (vacío hasta que alguien tome el caso)
-        "",   // Fecha Resolución
-        "",   // Tiempo Respuesta
-        ""    // Comentarios
+        "", "", "", ""
       ];
-      updates.push(controlRow);
-      rowsToUpdate.push(sheetRow);
+      contador++;
     }
   });
 
-  // Escribir en lote para eficiencia
-  rowsToUpdate.forEach((sheetRow, idx) => {
-    sheet.getRange(sheetRow, 16, 1, 7).setValues([updates[idx]]);
-  });
+  // Una sola escritura en lote
+  sheet.getRange(2, 16, lastRow - 1, 7).setValues(controlData);
 
-  return `${rowsToUpdate.length} filas inicializadas.`;
+  return `${contador} filas inicializadas.`;
 }
 
 /**
@@ -204,20 +202,18 @@ function inicializarColumnasControl() {
  */
 function onFormSubmit(e) {
   try {
-    const sheet   = getSheet_();
-    const lastRow = sheet.getLastRow();
-    const fila    = sheet.getRange(lastRow, 1, 1, 15).getValues()[0];
+    const sheet   = e.range.getSheet();
+    const filaNum = e.range.getRow();
+    const fila    = sheet.getRange(filaNum, 1, 1, 15).getValues()[0];
 
     const marcaTemporal = fila[CONFIG.COLS.MARCA_TEMPORAL];
     const area          = fila[CONFIG.COLS.AREA_PROGRAMA];
-    const idCaso        = generarIdCaso_(marcaTemporal, lastRow);
+    const idCaso        = generarIdCaso_(marcaTemporal, filaNum);
     const departamento  = asignarDepartamento_(area);
 
-    const controlRow = [
+    sheet.getRange(filaNum, CONFIG.COLS.ID_CASO + 1, 1, 7).setValues([
       [idCaso, departamento, CONFIG.ESTADOS.PENDIENTE, "", "", "", ""]
-    ];
-
-    sheet.getRange(lastRow, 16, 1, 7).setValues(controlRow);
+    ]);
 
     Logger.log(`Caso creado: ${idCaso} → ${departamento}`);
   } catch (err) {
@@ -388,11 +384,13 @@ function resolverCaso(filaNum, nombrePersonal, comentarios) {
     // Actualizar columnas S (Personal), T (Fecha Res), U (Tiempo), V (Comentarios), R (Estado)
     // Columna R = Estado (índice 17, col 18)
     // Columnas S-V = índices 18-21, cols 19-22
-    sheet.getRange(filaNum, C.ESTADO + 1).setValue(CONFIG.ESTADOS.RESUELTO);
-    sheet.getRange(filaNum, C.PERSONAL + 1).setValue(nombrePersonal.trim());
-    sheet.getRange(filaNum, C.FECHA_RESOLUCION + 1).setValue(ahora);
-    sheet.getRange(filaNum, C.TIEMPO_RESPUESTA + 1).setValue(tiempoRespuesta);
-    sheet.getRange(filaNum, C.COMENTARIOS + 1).setValue(comentarios.trim());
+    sheet.getRange(filaNum, C.ESTADO + 1, 1, 5).setValues([[
+      CONFIG.ESTADOS.RESUELTO,
+      nombrePersonal.trim(),
+      ahora,
+      tiempoRespuesta,
+      comentarios.trim()
+    ]]);
 
     SpreadsheetApp.flush();
 
@@ -585,5 +583,5 @@ function testSistema() {
   const stats = getEstadisticas();
   Logger.log("Estadísticas: " + JSON.stringify(stats, null, 2));
 
-  Logger.log("=== TEST COMPLETADO ===");
+  Logger.log("=== TEST COMPLETADOAAAAAAAAAAA ===");
 }
