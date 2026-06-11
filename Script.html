@@ -16,7 +16,7 @@ const App = {
   ultimaActualizacion: null,
   timerId:     null,         // referencia al interval de auto-refresh
   timerIdEnVivo: null,       // timer para tab En Vivo
-  casosEnVivoIds: []         // IDs de casos pendientes vistos
+  casosEnVivoIds: new Set()  // IDs de casos pendientes vistos
 };
 
 // ─────────────────────────────────────
@@ -70,7 +70,7 @@ function cerrarSesion() {
     App.timerIdEnVivo = null;
   }
   App.usuario = ""; App.rol = ""; App.casos = [];
-  App.casosEnVivoIds = [];
+  App.casosEnVivoIds = new Set();
   document.getElementById("appPrincipal").classList.remove("app-visible");
   document.getElementById("appPrincipal").classList.add("app-oculta");
   document.getElementById("pantallaAcceso").style.display = "flex";
@@ -91,6 +91,7 @@ function cambiarTab(tabId) {
 
   if (tabId === "analitica") cargarEstadisticas();
 
+  // Timer En Vivo
   if (tabId === "envivo") {
     cargarCasosEnVivo();
     if (!App.timerIdEnVivo) {
@@ -155,7 +156,9 @@ function obtenerFiltros() {
   return {
     sede:         document.getElementById("filtroSede")?.value || "Todos",
     departamento: document.getElementById("filtroDepartamento")?.value || "Todos",
-    estado:       document.getElementById("filtroEstado")?.value || "Todos"
+    estado:       document.getElementById("filtroEstado")?.value || "Todos",
+    fechaDesde:   document.getElementById("filtroFechaDesde")?.value || "",
+    fechaHasta:   document.getElementById("filtroFechaHasta")?.value || ""
   };
 }
 
@@ -232,11 +235,15 @@ function generarBotonesAccion(caso) {
   let html = "";
 
   if (caso.telefono) {
-    html += "<a href=\"https://wa.me/" + cleanPhone(caso.telefono) + "\" target=\"_blank\" class=\"btn-contacto btn-whatsapp\" title=\"WhatsApp\">WA</a>";
+    html += `<a href="https://wa.me/${cleanPhone(caso.telefono)}" target="_blank" class="btn-contacto btn-whatsapp" title="WhatsApp">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>`;
   }
 
   if (caso.emailContacto) {
-    html += "<a href=\"https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(caso.emailContacto) + "\" target=\"_blank\" class=\"btn-contacto btn-email\" title=\"Enviar email por Gmail\">Email</a>";
+    html += `<a href="mailto:${caso.emailContacto}" class="btn-contacto btn-email" title="Enviar email">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    </a>`;
   }
 
   html += `<button class="btn-tabla btn-tabla-ver" onclick="abrirDetalle(${caso.fila})">Ver</button>`;
@@ -299,8 +306,8 @@ function abrirDetalle(filaNum) {
       <div><p class="detalle-campo">Categoría</p><p class="detalle-valor">${esc(caso.categoriaCurso) || "—"}</p></div>
       <div><p class="detalle-campo">Profesor</p><p class="detalle-valor">${esc(caso.profesor) || "—"}</p></div>
       <div><p class="detalle-campo">Horario</p><p class="detalle-valor">${esc(caso.horario) || "—"}</p></div>
-      <div><p class="detalle-campo">Email Contacto</p><p class="detalle-valor">${caso.emailContacto ? `<a href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(caso.emailContacto)}" target="_blank" class="detalle-link">${esc(caso.emailContacto)}</a>` : "\u2014"}</p></div>
-      <div><p class="detalle-campo">Telefono</p><p class="detalle-valor">${caso.telefono ? `<a href="https://wa.me/${cleanPhone(caso.telefono)}" target="_blank" class="detalle-link">${esc(caso.telefono)}</a>` : "\u2014"}</p></div>
+      <div><p class="detalle-campo">Email Contacto</p><p class="detalle-valor">${caso.emailContacto ? `<a href="mailto:${caso.emailContacto}" class="detalle-link">${esc(caso.emailContacto)}</a>` : "—"}</p></div>
+      <div><p class="detalle-campo">Teléfono</p><p class="detalle-valor">${caso.telefono ? `<a href="https://wa.me/${cleanPhone(caso.telefono)}" target="_blank" class="detalle-link">${esc(caso.telefono)}</a>` : "—"}</p></div>
       ${caso.personal ? `<div><p class="detalle-campo">Atendido por</p><p class="detalle-valor">${esc(caso.personal)}</p></div>` : ""}
       ${caso.fechaResolucion ? `<div><p class="detalle-campo">Fecha Resolución</p><p class="detalle-valor">${esc(caso.fechaResolucion)}</p></div>` : ""}
       ${caso.tiempoRespuesta ? `<div><p class="detalle-campo">Tiempo de Respuesta</p><p class="detalle-valor">${esc(caso.tiempoRespuesta)}</p></div>` : ""}
@@ -645,62 +652,63 @@ function esc(str) {
 
 function truncar(str, max) {
   if (!str) return "";
-  return str.length > max ? str.slice(0, max) + "..." : str;
+  return str.length > max ? str.slice(0, max) + "…" : str;
 }
 
-// ----------------------------------------
-// LIMPIEZA DE TELEFONO PARA WHATSAPP
-// ----------------------------------------
+// ─────────────────────────────────────
+// LIMPIEZA DE TELÉFONO PARA WHATSAPP
+// ─────────────────────────────────────
 
 function cleanPhone(phone) {
   if (!phone) return "#";
-  var cleaned = String(phone).replace(/[\s\-\(\)\.]/g, "");
+  let cleaned = String(phone).replace(/[\s\-\(\)\.]/g, "");
   if (cleaned.startsWith("0")) cleaned = "+58" + cleaned.slice(1);
   else if (cleaned.startsWith("58") && !cleaned.startsWith("+")) cleaned = "+" + cleaned;
   else if (!cleaned.startsWith("+")) cleaned = "+58" + cleaned;
   return cleaned;
 }
 
-// ----------------------------------------
-// TAB EN VIVO - CASOS PENDIENTES
-// ----------------------------------------
+// ─────────────────────────────────────
+// TAB EN VIVO — CASOS PENDIENTES
+// ─────────────────────────────────────
 
 function cargarCasosEnVivo() {
-  var cargaEl = document.getElementById("envivoEstadoCarga");
-  var vacioEl = document.getElementById("envivoEstadoVacio");
-  var tablaEl = document.getElementById("envivoTablaWrapper");
+  const cargaEl = document.getElementById("envivoEstadoCarga");
+  const vacioEl = document.getElementById("envivoEstadoVacio");
+  const tablaEl = document.getElementById("envivoTablaWrapper");
 
   cargaEl.classList.remove("oculto");
   vacioEl.classList.add("oculto");
   tablaEl.classList.add("oculto");
 
-  var filtros = { estado: "Pendiente" };
+  const filtros = { estado: "Pendiente" };
   if (App.rol !== "Administrador") {
     filtros.departamento = App.rol;
   }
 
   google.script.run
-    .withSuccessHandler(function(casos) {
+    .withSuccessHandler(casos => {
       cargaEl.classList.add("oculto");
 
       if (!casos || casos.length === 0) {
         vacioEl.classList.remove("oculto");
         tablaEl.classList.add("oculto");
-        App.casosEnVivoIds = [];
+        App.casosEnVivoIds = new Set();
         return;
       }
 
-      App.casosEnVivoIds = casos.map(function(c) { return c.idCaso; });
+      // Guardar IDs actuales
+      App.casosEnVivoIds = new Set(casos.map(c => c.idCaso));
 
       tablaEl.classList.remove("oculto");
       renderizarTablaEnvivo(casos);
 
-      var metaEl = document.getElementById("metaEnvivo");
+      const metaEl = document.getElementById("metaEnvivo");
       if (metaEl) {
-        metaEl.textContent = "Actualizado: " + new Date().toLocaleTimeString("es-VE");
+        metaEl.textContent = "Última actualización: " + new Date().toLocaleTimeString("es-VE");
       }
     })
-    .withFailureHandler(function(err) {
+    .withFailureHandler(err => {
       cargaEl.classList.add("oculto");
       mostrarToast("Error al cargar casos pendientes: " + err.message, "error");
     })
@@ -708,69 +716,112 @@ function cargarCasosEnVivo() {
 }
 
 function verificarCasosNuevosEnVivo() {
-  var filtros = { estado: "Pendiente" };
+  const filtros = { estado: "Pendiente" };
   if (App.rol !== "Administrador") {
     filtros.departamento = App.rol;
   }
 
   google.script.run
-    .withSuccessHandler(function(casos) {
+    .withSuccessHandler(casos => {
       if (!casos || casos.length === 0) {
-        App.casosEnVivoIds = [];
+        App.casosEnVivoIds = new Set();
         renderizarTablaEnvivo([]);
         return;
       }
 
-      var nuevosIds = casos.filter(function(c) {
-        return App.casosEnVivoIds.indexOf(c.idCaso) === -1;
-      }).map(function(c) { return c.idCaso; });
+      const nuevosIds = casos.filter(c => !App.casosEnVivoIds.has(c.idCaso));
 
-      App.casosEnVivoIds = casos.map(function(c) { return c.idCaso; });
+      // Actualizar IDs conocidos
+      App.casosEnVivoIds = new Set(casos.map(c => c.idCaso));
 
+      // Renderizar tabla
       renderizarTablaEnvivo(casos);
 
-      var metaEl = document.getElementById("metaEnvivo");
+      // Actualizar timestamp
+      const metaEl = document.getElementById("metaEnvivo");
       if (metaEl) {
-        metaEl.textContent = "Actualizado: " + new Date().toLocaleTimeString("es-VE");
+        metaEl.textContent = "Última actualización: " + new Date().toLocaleTimeString("es-VE");
       }
 
+      // Notificar solo si hay casos nuevos
       if (nuevosIds.length > 0) {
-        mostrarToast("Nuevos casos pendientes: " + nuevosIds.length, "info");
+        const casoNuevo = casos.find(c => c.idCaso === nuevosIds[0]);
+        mostrarNotificacionEnvivo(casoNuevo, nuevosIds.length);
       }
     })
-    .withFailureHandler(function(err) {
+    .withFailureHandler(err => {
       mostrarToast("Error al verificar casos nuevos: " + err.message, "error");
     })
     .getCasos(filtros);
 }
 
 function renderizarTablaEnvivo(casos) {
-  var tbody = document.getElementById("envivoCuerpoCasos");
+  const tbody = document.getElementById("envivoCuerpoCasos");
   tbody.innerHTML = "";
 
   if (!casos || casos.length === 0) return;
 
-  casos.forEach(function(caso) {
-    var tr = document.createElement("tr");
-    var contactos = "";
-    if (caso.telefono) {
-      contactos += "<a href=\"https://wa.me/" + cleanPhone(caso.telefono) + "\" target=\"_blank\" class=\"btn-contacto btn-whatsapp\" title=\"WhatsApp\">WA</a>";
-    }
-    if (caso.emailContacto) {
-      contactos += "<a href=\"https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(caso.emailContacto) + "\" target=\"_blank\" class=\"btn-contacto btn-email\" title=\"Enviar email por Gmail\">Email</a>";
-    }
-    contactos += "<button class=\"btn-tabla btn-tabla-ver\" onclick=\"abrirDetalle(" + caso.fila + ")\">Ver</button>";
-    tr.innerHTML = "" +
-      "<td><strong style=\"color:var(--azul-claro);font-size:.8rem\">" + esc(caso.idCaso) + "</strong></td>" +
-      "<td>" + esc(caso.fechaRegistro) + "</td>" +
-      "<td title=\"" + esc(caso.nombreAlumno) + "\">" + esc(truncar(caso.nombreAlumno, 22)) + "</td>" +
-      "<td>" + esc(truncar(caso.sede.replace("CEVAZ ", ""), 16)) + "</td>" +
-      "<td title=\"" + esc(caso.areaPrograma) + "\">" + esc(truncar(caso.areaPrograma, 18)) + "</td>" +
-      "<td><span class=\"badge " + ((caso.tipoPlanteamiento || "").indexOf("QUEJA") !== -1 ? "badge-queja" : "badge-sugerencia") + "\">" +
-        ((caso.tipoPlanteamiento || "").indexOf("QUEJA") !== -1 ? "Queja" : "Sugerencia") +
-      "</span></td>" +
-      "<td class=\"acciones-celda\">" + contactos + "</td>";
+  casos.forEach(caso => {
+    const esReciente = esCasoReciente(caso.fechaRegistro);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong style="color:var(--azul-claro);font-size:.8rem">${esc(caso.idCaso)}</strong>
+        ${esReciente ? '<span class="badge-nuevo">NUEVO</span>' : ''}
+      </td>
+      <td>${esc(caso.fechaRegistro)}</td>
+      <td title="${esc(caso.nombreAlumno)}">${esc(truncar(caso.nombreAlumno, 22))}</td>
+      <td>${esc(truncar(caso.sede.replace("CEVAZ ", ""), 16))}</td>
+      <td title="${esc(caso.areaPrograma)}">${esc(truncar(caso.areaPrograma, 18))}</td>
+      <td><span class="badge ${(caso.tipoPlanteamiento || "").includes("QUEJA") ? "badge-queja" : "badge-sugerencia"}">
+        ${(caso.tipoPlanteamiento || "").includes("QUEJA") ? "Queja" : "Sugerencia"}
+      </span></td>
+      <td class="acciones-celda">
+        ${caso.telefono ? `<a href="https://wa.me/${cleanPhone(caso.telefono)}" target="_blank" class="btn-contacto btn-whatsapp" title="WhatsApp">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </a>` : ''}
+        ${caso.emailContacto ? `<a href="mailto:${caso.emailContacto}" class="btn-contacto btn-email" title="Enviar email">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </a>` : ''}
+      </td>
+    `;
     tbody.appendChild(tr);
   });
+}
+
+function esCasoReciente(fechaRegistro) {
+  if (!fechaRegistro) return false;
+  try {
+    const partes = fechaRegistro.split(" ");
+    const fechaPart = partes[0].split("/");
+    const horaPart = partes[1] || "00:00";
+    const [hora, minuto] = horaPart.split(":");
+    const fechaCaso = new Date(
+      parseInt(fechaPart[2]),
+      parseInt(fechaPart[1]) - 1,
+      parseInt(fechaPart[0]),
+      parseInt(hora),
+      parseInt(minuto)
+    );
+    const ahora = new Date();
+    const diffMinutos = (ahora - fechaCaso) / 60000;
+    return diffMinutos <= 10;
+  } catch {
+    return false;
+  }
+}
+
+function mostrarNotificacionEnvivo(caso, cantidad) {
+  if (!caso) return;
+  const contenedor = document.getElementById("toastContainer");
+  const toast = document.createElement("div");
+  toast.className = "toast toast-whatsapp";
+  toast.innerHTML = `
+    <div class="toast-whatsapp-titulo">Nuevo caso pendiente</div>
+    <div class="toast-whatsapp-id">${esc(caso.idCaso)}</div>
+    <div class="toast-whatsapp-info">${esc(caso.nombreAlumno)} — ${esc(caso.sede.replace("CEVAZ ", ""))} · ${esc(caso.tipoPlanteamiento)}</div>
+    ${cantidad > 1 ? `<div class="toast-whatsapp-info">+${cantidad - 1} caso(s) más</div>` : ''}
+  `;
+  contenedor.appendChild(toast);
+  setTimeout(() => toast.remove(), 8000);
 }
 </script>
