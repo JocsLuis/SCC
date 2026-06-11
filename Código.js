@@ -89,7 +89,7 @@ function doGet(e) {
   const template = HtmlService.createTemplateFromFile("Index");
   return template.evaluate()
     .setTitle("CEVAZ — Gestión de Casos")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DENY)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
 }
 
