@@ -236,7 +236,7 @@ function generarBotonesAccion(caso) {
   }
 
   if (caso.emailContacto) {
-    html += "<a href=\"https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(caso.emailContacto) + "\" target=\"_blank\" class=\"btn-contacto btn-email\" title=\"Enviar email por Gmail\">&#9993;</a>";
+    html += "<a href=\"https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(caso.emailContacto) + "\" target=\"_blank\" class=\"btn-contacto btn-email\" title=\"Enviar email por Gmail\">Email</a>";
   }
 
   html += `<button class="btn-tabla btn-tabla-ver" onclick="abrirDetalle(${caso.fila})">Ver</button>`;
@@ -757,7 +757,7 @@ function renderizarTablaEnvivo(casos) {
       contactos += "<a href=\"https://wa.me/" + cleanPhone(caso.telefono) + "\" target=\"_blank\" class=\"btn-contacto btn-whatsapp\" title=\"WhatsApp\">WA</a>";
     }
     if (caso.emailContacto) {
-      contactos += "<a href=\"https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(caso.emailContacto) + "\" target=\"_blank\" class=\"btn-contacto btn-email\" title=\"Enviar email por Gmail\">&#9993;</a>";
+      contactos += "<a href=\"https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(caso.emailContacto) + "\" target=\"_blank\" class=\"btn-contacto btn-email\" title=\"Enviar email por Gmail\">Email</a>";
     }
     contactos += "<button class=\"btn-tabla btn-tabla-ver\" onclick=\"abrirDetalle(" + caso.fila + ")\">Ver</button>";
     tr.innerHTML = "" +
