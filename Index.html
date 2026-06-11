@@ -99,7 +99,11 @@
       </button>
       <button class="tab-btn" data-tab="analitica" onclick="cambiarTab('analitica')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        Analítica
+        Analitica
+      </button>
+      <button class="tab-btn" data-tab="envivo" onclick="cambiarTab('envivo')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        En Vivo
       </button>
     </nav>
 
@@ -234,6 +238,37 @@
           <h3 class="grafico-titulo">Tiempo Promedio de Resolución (horas)</h3>
           <canvas id="graficoTiempo"></canvas>
         </div>
+      </div>
+    </section>
+
+    <!-- TAB: EN VIVO (casos pendientes) -->
+    <section id="tab-envivo" class="tab-contenido">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo">Casos Pendientes</h2>
+        <span class="seccion-meta" id="metaEnvivo">--</span>
+      </div>
+      <div id="envivoEstadoCarga" class="estado-carga">
+        <div class="spinner"></div>
+        <p>Cargando casos pendientes...</p>
+      </div>
+      <div id="envivoEstadoVacio" class="estado-vacio oculto">
+        <p>No hay casos pendientes en tu departamento</p>
+      </div>
+      <div class="tabla-wrapper oculto" id="envivoTablaWrapper">
+        <table class="tabla-casos" id="envivoTabla">
+          <thead>
+            <tr>
+              <th>ID Caso</th>
+              <th>Fecha</th>
+              <th>Alumno</th>
+              <th>Sede</th>
+              <th>Area</th>
+              <th>Tipo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="envivoCuerpoCasos"></tbody>
+        </table>
       </div>
     </section>
 

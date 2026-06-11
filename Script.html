@@ -14,7 +14,9 @@ const App = {
   casoActivo:  null,         // objeto de caso seleccionado en el modal
   graficos:    {},           // referencias Chart.js
   ultimaActualizacion: null,
-  timerId:     null          // referencia al interval de auto-refresh
+  timerId:     null,         // referencia al interval de auto-refresh
+  timerIdEnVivo: null,       // timer para tab En Vivo
+  casosEnVivoIds: []         // IDs de casos pendientes vistos
 };
 
 // ─────────────────────────────────────
@@ -63,7 +65,12 @@ function cerrarSesion() {
     clearInterval(App.timerId);
     App.timerId = null;
   }
+  if (App.timerIdEnVivo) {
+    clearInterval(App.timerIdEnVivo);
+    App.timerIdEnVivo = null;
+  }
   App.usuario = ""; App.rol = ""; App.casos = [];
+  App.casosEnVivoIds = [];
   document.getElementById("appPrincipal").classList.remove("app-visible");
   document.getElementById("appPrincipal").classList.add("app-oculta");
   document.getElementById("pantallaAcceso").style.display = "flex";
@@ -83,6 +90,18 @@ function cambiarTab(tabId) {
   document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add("tab-activo");
 
   if (tabId === "analitica") cargarEstadisticas();
+
+  if (tabId === "envivo") {
+    cargarCasosEnVivo();
+    if (!App.timerIdEnVivo) {
+      App.timerIdEnVivo = setInterval(verificarCasosNuevosEnVivo, 15 * 60 * 1000);
+    }
+  } else {
+    if (App.timerIdEnVivo) {
+      clearInterval(App.timerIdEnVivo);
+      App.timerIdEnVivo = null;
+    }
+  }
 }
 
 // ─────────────────────────────────────
@@ -616,6 +635,111 @@ function esc(str) {
 
 function truncar(str, max) {
   if (!str) return "";
-  return str.length > max ? str.slice(0, max) + "…" : str;
+  return str.length > max ? str.slice(0, max) + "..." : str;
+}
+
+// ----------------------------------------
+// TAB EN VIVO - CASOS PENDIENTES
+// ----------------------------------------
+
+function cargarCasosEnVivo() {
+  var cargaEl = document.getElementById("envivoEstadoCarga");
+  var vacioEl = document.getElementById("envivoEstadoVacio");
+  var tablaEl = document.getElementById("envivoTablaWrapper");
+
+  cargaEl.classList.remove("oculto");
+  vacioEl.classList.add("oculto");
+  tablaEl.classList.add("oculto");
+
+  var filtros = { estado: "Pendiente" };
+  if (App.rol !== "Administrador") {
+    filtros.departamento = App.rol;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(casos) {
+      cargaEl.classList.add("oculto");
+
+      if (!casos || casos.length === 0) {
+        vacioEl.classList.remove("oculto");
+        tablaEl.classList.add("oculto");
+        App.casosEnVivoIds = [];
+        return;
+      }
+
+      App.casosEnVivoIds = casos.map(function(c) { return c.idCaso; });
+
+      tablaEl.classList.remove("oculto");
+      renderizarTablaEnvivo(casos);
+
+      var metaEl = document.getElementById("metaEnvivo");
+      if (metaEl) {
+        metaEl.textContent = "Actualizado: " + new Date().toLocaleTimeString("es-VE");
+      }
+    })
+    .withFailureHandler(function(err) {
+      cargaEl.classList.add("oculto");
+      mostrarToast("Error al cargar casos pendientes: " + err.message, "error");
+    })
+    .getCasos(filtros);
+}
+
+function verificarCasosNuevosEnVivo() {
+  var filtros = { estado: "Pendiente" };
+  if (App.rol !== "Administrador") {
+    filtros.departamento = App.rol;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(casos) {
+      if (!casos || casos.length === 0) {
+        App.casosEnVivoIds = [];
+        renderizarTablaEnvivo([]);
+        return;
+      }
+
+      var nuevosIds = casos.filter(function(c) {
+        return App.casosEnVivoIds.indexOf(c.idCaso) === -1;
+      }).map(function(c) { return c.idCaso; });
+
+      App.casosEnVivoIds = casos.map(function(c) { return c.idCaso; });
+
+      renderizarTablaEnvivo(casos);
+
+      var metaEl = document.getElementById("metaEnvivo");
+      if (metaEl) {
+        metaEl.textContent = "Actualizado: " + new Date().toLocaleTimeString("es-VE");
+      }
+
+      if (nuevosIds.length > 0) {
+        mostrarToast("Nuevos casos pendientes: " + nuevosIds.length, "info");
+      }
+    })
+    .withFailureHandler(function(err) {
+      mostrarToast("Error al verificar casos nuevos: " + err.message, "error");
+    })
+    .getCasos(filtros);
+}
+
+function renderizarTablaEnvivo(casos) {
+  var tbody = document.getElementById("envivoCuerpoCasos");
+  tbody.innerHTML = "";
+
+  if (!casos || casos.length === 0) return;
+
+  casos.forEach(function(caso) {
+    var tr = document.createElement("tr");
+    tr.innerHTML = "" +
+      "<td><strong style=\"color:var(--azul-claro);font-size:.8rem\">" + esc(caso.idCaso) + "</strong></td>" +
+      "<td>" + esc(caso.fechaRegistro) + "</td>" +
+      "<td title=\"" + esc(caso.nombreAlumno) + "\">" + esc(truncar(caso.nombreAlumno, 22)) + "</td>" +
+      "<td>" + esc(truncar(caso.sede.replace("CEVAZ ", ""), 16)) + "</td>" +
+      "<td title=\"" + esc(caso.areaPrograma) + "\">" + esc(truncar(caso.areaPrograma, 18)) + "</td>" +
+      "<td><span class=\"badge " + ((caso.tipoPlanteamiento || "").indexOf("QUEJA") !== -1 ? "badge-queja" : "badge-sugerencia") + "\">" +
+        ((caso.tipoPlanteamiento || "").indexOf("QUEJA") !== -1 ? "Queja" : "Sugerencia") +
+      "</span></td>" +
+      "<td class=\"acciones-celda\"><button class=\"btn-tabla btn-tabla-ver\" onclick=\"abrirDetalle(" + caso.fila + ")\">Ver</button></td>";
+    tbody.appendChild(tr);
+  });
 }
 </script>
