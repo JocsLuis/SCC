@@ -77,12 +77,56 @@ body {
   justify-content: center;
   margin-bottom: 8px;
 }
-.acceso-logo-img {
-  height: 80px;
-  object-fit: contain;
-}
 .logo-sigla { color: var(--azul-profundo); }
 .logo-az    { color: var(--dorado); }
+
+/* ───────────────────────────────────────
+   LOGO CEVAZ CSS
+─────────────────────────────────────── */
+.cevaz-logo { display: flex; flex-direction: column; align-items: center; }
+.cevaz-icono { position: relative; width: 200px; height: 195px; margin-bottom: 4px; }
+.cevaz-cabezas { display: flex; justify-content: space-between; width: 155px; margin: 0 auto; margin-bottom: 6px; }
+.cevaz-cabeza { width: 60px; height: 60px; background: var(--azul-profundo); border-radius: 50%; }
+.cevaz-hombro-izq { position: absolute; top: 66px; left: 0; width: 118px; height: 33px; background: var(--azul-profundo); border-top-left-radius: 5px; clip-path: polygon(0 0, 100% 0, 100% 12%, 0 55%); }
+.cevaz-brazo-der { position: absolute; top: 66px; right: 0; width: 153px; height: 34px; background: var(--azul-profundo); border-top-right-radius: 5px; border-bottom-right-radius: 5px; clip-path: polygon(0 48%, 100% 0, 100% 100%, 0 100%); display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; padding-right: 5px; padding-bottom: 3px; box-sizing: border-box; gap: 2px; }
+.cevaz-estrellas-fila1 { color: #fff; font-size: 8px; line-height: 1; margin-right: 1px; }
+.cevaz-estrellas-fila2 { color: #fff; font-size: 8px; line-height: 1; margin-right: 1px; }
+.cevaz-cuerpo { position: absolute; top: 103px; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: flex-start; }
+.cevaz-piernas { width: 91px; height: 87px; background: var(--azul-profundo); border-top-left-radius: 8px; border-bottom-left-radius: 9px; border-bottom-right-radius: 9px; clip-path: polygon(0 0, 100% 0, 100% 100%, 78% 100%, 50% 48%, 22% 100%, 0 100%); }
+.cevaz-barras { width: 95px; height: 88px; display: flex; justify-content: space-between; align-items: flex-start; }
+.cevaz-barra { width: 7px; background: var(--azul-profundo); border-radius: 4px; }
+.cevaz-barra:nth-child(1) { height: 88px; }
+.cevaz-barra:nth-child(2) { height: 88px; }
+.cevaz-barra:nth-child(3) { height: 69px; }
+.cevaz-barra:nth-child(4) { height: 88px; }
+.cevaz-barra:nth-child(5) { height: 59px; }
+.cevaz-barra:nth-child(6) { height: 88px; }
+.cevaz-barra:nth-child(7) { height: 69px; }
+.cevaz-barra:nth-child(8) { height: 88px; }
+.cevaz-barra:nth-child(9) { height: 88px; }
+.cevaz-texto { font-family: var(--fuente-cuerpo); font-size: 68px; font-weight: 400; color: var(--azul-profundo); letter-spacing: -3px; line-height: 0.9; margin-top: 2px; }
+
+/* Logo compacto para topbar */
+.cevaz-logo-topbar { flex-direction: row; margin: 0; }
+.cevaz-icono-topbar { width: 36px; height: 35px; margin: 0; transform: scale(0.18); transform-origin: top left; position: absolute; top: 50%; left: 0; margin-top: -17px; }
+.cevaz-cabezas-topbar { width: 155px; }
+.cevaz-cabeza-topbar { width: 60px; height: 60px; }
+.cevaz-hombro-izq-topbar { top: 66px; width: 118px; height: 33px; }
+.cevaz-brazo-der-topbar { top: 66px; width: 153px; height: 34px; }
+.cevaz-estrellas-topbar { font-size: 8px; }
+.cevaz-cuerpo-topbar { top: 103px; }
+.cevaz-piernas-topbar { width: 91px; height: 87px; }
+.cevaz-barras-topbar { width: 95px; height: 88px; }
+.cevaz-barra-topbar { width: 7px; }
+.cevaz-barra-topbar:nth-child(1) { height: 88px; }
+.cevaz-barra-topbar:nth-child(2) { height: 88px; }
+.cevaz-barra-topbar:nth-child(3) { height: 69px; }
+.cevaz-barra-topbar:nth-child(4) { height: 88px; }
+.cevaz-barra-topbar:nth-child(5) { height: 59px; }
+.cevaz-barra-topbar:nth-child(6) { height: 88px; }
+.cevaz-barra-topbar:nth-child(7) { height: 69px; }
+.cevaz-barra-topbar:nth-child(8) { height: 88px; }
+.cevaz-barra-topbar:nth-child(9) { height: 88px; }
 
 .acceso-subtitulo {
   color: var(--texto-suave);
@@ -201,10 +245,6 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-.topbar-logo-img {
-  height: 32px;
-  object-fit: contain;
 }
 .topbar-marca .logo-sigla { color: #fff; font-family: var(--fuente-display); font-size: 1.35rem; font-weight: 800; }
 .topbar-marca .logo-az    { color: var(--dorado-suave); font-family: var(--fuente-display); font-size: 1.35rem; font-weight: 800; }
