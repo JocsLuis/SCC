@@ -611,5 +611,5 @@ function testSistema() {
   const stats = getEstadisticas();
   Logger.log("Estadísticas: " + JSON.stringify(stats, null, 2));
 
-  Logger.log("=== TEST COMPLETADO ===");
+  Logger.log("=== TEST COMPLETADOAAAAAAAAAAA ===");
 }
