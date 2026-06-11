@@ -6,7 +6,6 @@
 // --- CONFIGURACIÓN GLOBAL ---
 const CONFIG = {
   SHEET_NAME: "Respuestas de formulario 1", // Ajusta si el nombre difiere
-  SPREADSHEET_ID: "1Q9HRlVl8-Ryn1PJeOxBAhx2DMf6qIO2LgqxLpKGI7HI", // Dejar vacío para usar el Spreadsheet activo (recomendado)
 
   // Mapeo de columnas a índice base-0
   COLS: {
@@ -63,6 +62,21 @@ const CONFIG = {
   }
 };
 
+Object.freeze(CONFIG);
+
+// =============================================================================
+// CONFIGURACIÓN INICIAL — Ejecutar una vez desde el editor
+// =============================================================================
+
+/**
+ * Configura el SPREADSHEET_ID en Properties Service.
+ * Ejecutar una vez: Editor > Ejecutar > configurarSpreadsheetId
+ */
+function configurarSpreadsheetId() {
+  PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', '1Q9HRlVl8-Ryn1PJeOxBAhx2DMf6qIO2LgqxLpKGI7HI');
+  Logger.log("SPREADSHEET_ID configurado correctamente.");
+}
+
 // =============================================================================
 // PUNTO DE ENTRADA — doGet()
 // =============================================================================
@@ -75,7 +89,7 @@ function doGet(e) {
   const template = HtmlService.createTemplateFromFile("Index");
   return template.evaluate()
     .setTitle("CEVAZ — Gestión de Casos")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DENY)
     .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
 }
 
@@ -95,8 +109,9 @@ function include(filename) {
  * Retorna la hoja de cálculo activa o por ID configurado.
  */
 function getSheet_() {
-  const ss = CONFIG.SPREADSHEET_ID
-    ? SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID)
+  const spreadsheetId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  const ss = spreadsheetId
+    ? SpreadsheetApp.openById(spreadsheetId)
     : SpreadsheetApp.getActiveSpreadsheet();
 
   if (!ss) {
@@ -306,15 +321,21 @@ function getCasos(filtros) {
  * @param {string} nombrePersonal - Nombre del agente que toma el caso.
  * @returns {Object} { exito: boolean, mensaje: string }
  */
-function tomarCaso(filaNum, nombrePersonal) {
+function tomarCaso(filaNum, nombrePersonal, rolUsuario) {
   try {
     validarEntrada_({ filaNum, nombrePersonal });
 
     const sheet = getSheet_();
     const C = CONFIG.COLS;
 
-    // Leer estado actual (columna R = col 18 en base-0 → col 18 en base-1)
+    // Leer estado y departamento actual
     const estadoActual = sheet.getRange(filaNum, C.ESTADO + 1).getValue();
+    const departamento = sheet.getRange(filaNum, C.DEPARTAMENTO + 1).getValue();
+
+    // Validar permisos por departamento
+    if (rolUsuario !== "Administrador" && departamento !== rolUsuario) {
+      return { exito: false, mensaje: "No tienes permiso para tomar casos de este departamento." };
+    }
 
     if (estadoActual === CONFIG.ESTADOS.RESUELTO) {
       return { exito: false, mensaje: "Este caso ya fue resuelto y no puede modificarse." };
@@ -361,16 +382,22 @@ function tomarCaso(filaNum, nombrePersonal) {
  * @param {string} comentarios    - Descripción de la solución aplicada.
  * @returns {Object} { exito: boolean, mensaje: string, tiempoRespuesta: string }
  */
-function resolverCaso(filaNum, nombrePersonal, comentarios) {
+function resolverCaso(filaNum, nombrePersonal, comentarios, rolUsuario) {
   try {
     validarEntrada_({ filaNum, nombrePersonal, comentarios });
 
     const sheet = getSheet_();
     const C = CONFIG.COLS;
 
-    // Leer fila completa para verificar estado y obtener marca temporal
+    // Leer fila completa para verificar estado, departamento y obtener marca temporal
     const filaData = sheet.getRange(filaNum, 1, 1, 22).getValues()[0];
     const estadoActual = filaData[C.ESTADO];
+    const departamento = filaData[C.DEPARTAMENTO];
+
+    // Validar permisos por departamento
+    if (rolUsuario !== "Administrador" && departamento !== rolUsuario) {
+      return { exito: false, mensaje: "No tienes permiso para resolver casos de este departamento." };
+    }
 
     if (estadoActual === CONFIG.ESTADOS.RESUELTO) {
       return { exito: false, mensaje: "Este caso ya fue resuelto anteriormente." };
@@ -521,7 +548,8 @@ function calcularTiempoRespuesta_(fechaInicio, fechaFin) {
     if (dias > 0)  return `${dias}d ${horas}h`;
     if (horas > 0) return `${horas}h ${minutos}m`;
     return `${minutos}m`;
-  } catch {
+  } catch (e) {
+    Logger.log(`Error en calcularTiempoRespuesta_: ${e.message}`);
     return "N/A";
   }
 }
@@ -583,5 +611,5 @@ function testSistema() {
   const stats = getEstadisticas();
   Logger.log("Estadísticas: " + JSON.stringify(stats, null, 2));
 
-  Logger.log("=== TEST COMPLETADOAAAAAAAAAAA ===");
+  Logger.log("=== TEST COMPLETADO ===");
 }

@@ -197,9 +197,9 @@ function renderizarTabla(casos) {
       <td title="${esc(caso.nombreAlumno)}">${esc(truncar(caso.nombreAlumno, 22))}</td>
       <td>${esc(truncar(caso.sede.replace("CEVAZ ", ""), 16))}</td>
       <td title="${esc(caso.areaPrograma)}">${esc(truncar(caso.areaPrograma, 18))}</td>
-      <td><span class="badge badge-${caso.departamento.toLowerCase()}">${esc(caso.departamento)}</span></td>
-      <td><span class="badge ${caso.tipoPlanteamiento.includes("QUEJA") ? "badge-queja" : "badge-sugerencia"}">
-        ${caso.tipoPlanteamiento.includes("QUEJA") ? "Queja" : "Sugerencia"}
+      <td><span class="badge badge-${(caso.departamento || "").toLowerCase()}">${esc(caso.departamento || "")}</span></td>
+      <td><span class="badge ${(caso.tipoPlanteamiento || "").includes("QUEJA") ? "badge-queja" : "badge-sugerencia"}">
+        ${(caso.tipoPlanteamiento || "").includes("QUEJA") ? "Queja" : "Sugerencia"}
       </span></td>
       <td><span class="badge ${badgeEstado(caso.estado)}">${esc(caso.estado)}</span></td>
       <td>${esc(truncar(caso.personal, 18)) || '<span style="color:var(--texto-extra)">—</span>'}</td>
@@ -345,9 +345,7 @@ function confirmarTomarCaso() {
       cerrarModal();
       if (res.exito) {
         mostrarToast(res.mensaje, "exito");
-        actualizarCasoEnCache(App.casoActivo.fila, { estado: res.estado, personal: res.personal });
-        renderizarTabla(App.casos);
-        actualizarKPIs(App.casos);
+        cargarCasos();
       } else {
         mostrarToast(res.mensaje, "error");
       }
@@ -356,7 +354,7 @@ function confirmarTomarCaso() {
       btn.disabled = false; btn.textContent = "Confirmar — Tomar Caso";
       mostrarToast("Error del servidor: " + err.message, "error");
     })
-    .tomarCaso(App.casoActivo.fila, personal);
+    .tomarCaso(App.casoActivo.fila, personal, App.rol);
 }
 
 // ─────────────────────────────────────
@@ -413,15 +411,7 @@ function confirmarResolverCaso() {
       cerrarModal();
       if (res.exito) {
         mostrarToast(res.mensaje, "exito");
-        actualizarCasoEnCache(App.casoActivo.fila, {
-          estado:          res.estado,
-          personal:        res.personal,
-          fechaResolucion: res.fechaResolucion,
-          tiempoRespuesta: res.tiempoRespuesta,
-          comentarios:     comentarios
-        });
-        renderizarTabla(App.casos);
-        actualizarKPIs(App.casos);
+        cargarCasos();
       } else {
         mostrarToast(res.mensaje, "error");
       }
@@ -430,7 +420,7 @@ function confirmarResolverCaso() {
       btn.disabled = false; btn.textContent = "Marcar como Resuelto";
       mostrarToast("Error del servidor: " + err.message, "error");
     })
-    .resolverCaso(App.casoActivo.fila, personal, comentarios);
+    .resolverCaso(App.casoActivo.fila, personal, comentarios, App.rol);
 }
 
 // ─────────────────────────────────────
@@ -620,7 +610,8 @@ function esc(str) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function truncar(str, max) {
