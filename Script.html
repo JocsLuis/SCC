@@ -1,12 +1,12 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script>
-// ═══════════════════════════════════════════════════════
-//  CEVAZ — Script del Cliente (google.script.run ↔ Apps Script)
-// ═══════════════════════════════════════════════════════
+// ============================================================
+//  CEVAZ - Script del Cliente (google.script.run <-> Apps Script)
+// ============================================================
 
-// ─────────────────────────────────────
+// ----------------------------------------
 // ESTADO GLOBAL
-// ─────────────────────────────────────
+// ----------------------------------------
 const App = {
   usuario:     "",
   rol:         "",           // "Administrador" | "SAC" | "Academia"
@@ -19,9 +19,9 @@ const App = {
   casosEnVivoIds: new Set()  // IDs de casos pendientes vistos
 };
 
-// ─────────────────────────────────────
-// ACCESO Y SESIÓN
-// ─────────────────────────────────────
+// ----------------------------------------
+// ACCESO Y SESION
+// ----------------------------------------
 
 function accederAlSistema() {
   const nombre = document.getElementById("inputNombreAcceso").value.trim();
@@ -46,7 +46,7 @@ function accederAlSistema() {
     document.getElementById("grupFiltroDep").style.display = "none";
     document.getElementById("filtroDepartamento").value    = rol;
     document.getElementById("tituloCasos").textContent =
-      `Casos — ${rol}`;
+      `Casos - ${rol}`;
   }
 
   cargarCasos();
@@ -78,9 +78,9 @@ function cerrarSesion() {
   document.getElementById("selectRol").value = "";
 }
 
-// ─────────────────────────────────────
-// NAVEGACIÓN POR TABS
-// ─────────────────────────────────────
+// ----------------------------------------
+// NAVEGACION POR TABS
+// ----------------------------------------
 
 function cambiarTab(tabId) {
   document.querySelectorAll(".tab-contenido").forEach(s => s.classList.remove("tab-visible"));
@@ -105,9 +105,9 @@ function cambiarTab(tabId) {
   }
 }
 
-// ─────────────────────────────────────
+// ----------------------------------------
 // CARGA DE DATOS
-// ─────────────────────────────────────
+// ----------------------------------------
 
 function recargarDatos() {
   App.casos = [];
@@ -162,9 +162,9 @@ function obtenerFiltros() {
   };
 }
 
-// ─────────────────────────────────────
+// ----------------------------------------
 // KPIs
-// ─────────────────────────────────────
+// ----------------------------------------
 
 function actualizarKPIs(casos) {
   const total     = casos.length;
@@ -191,9 +191,9 @@ function animarNumero(id, destino) {
   }, 20);
 }
 
-// ─────────────────────────────────────
+// ----------------------------------------
 // TABLA DE CASOS
-// ─────────────────────────────────────
+// ----------------------------------------
 
 function renderizarTabla(casos) {
   const tbody    = document.getElementById("cuerpoCasos");
@@ -224,7 +224,7 @@ function renderizarTabla(casos) {
         ${(caso.tipoPlanteamiento || "").includes("QUEJA") ? "Queja" : "Sugerencia"}
       </span></td>
       <td><span class="badge ${badgeEstado(caso.estado)}">${esc(caso.estado)}</span></td>
-      <td>${esc(truncar(caso.personal, 18)) || '<span style="color:var(--texto-extra)">—</span>'}</td>
+      <td>${esc(truncar(caso.personal, 18)) || '<span style="color:var(--texto-extra)">-</span>'}</td>
       <td class="acciones-celda">${generarBotonesAccion(caso)}</td>
     `;
     tbody.appendChild(tr);
@@ -236,7 +236,7 @@ function generarBotonesAccion(caso) {
 
   if (caso.telefono) {
     html += `<a href="https://wa.me/${cleanPhone(caso.telefono)}" target="_blank" class="btn-contacto btn-whatsapp" title="WhatsApp">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.82 13.5c-.22.63-1.3 1.2-1.78 1.23-.46.02-.85.22-2.85-.6-2.41-1.07-3.95-3.77-4.07-3.94-.12-.17-.99-1.4-.99-2.67 0-1.27.67-1.9 1.01-2.16.34-.26.74-.32.99-.32.25 0 .49.01.71.01.22.02.52-.08.81.62.29.7.99 2.43 1.08 2.6.09.17.14.37.03.6-.12.23-.17.37-.34.56-.17.2-.36.44-.51.59-.17.17-.35.35-.15.69.2.34.9 1.49 1.94 2.42 1.34 1.2 2.48 1.58 2.84 1.75.36.17.57.14.78-.08.21-.22.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.1 1 2.46 1.18.36.18.59.27.68.42.09.15.09.87-.13 1.5z"/></svg>
     </a>`;
   }
 
@@ -260,9 +260,9 @@ function generarBotonesAccion(caso) {
   return html;
 }
 
-// ─────────────────────────────────────
-// BÚSQUEDA LOCAL
-// ─────────────────────────────────────
+// ----------------------------------------
+// BUSQUEDA LOCAL
+// ----------------------------------------
 
 function buscarCasos() {
   const query = document.getElementById("inputBusqueda").value.toLowerCase().trim();
@@ -279,9 +279,9 @@ function buscarCasos() {
   renderizarTabla(filtrados);
 }
 
-// ─────────────────────────────────────
-// MODAL — VER DETALLE
-// ─────────────────────────────────────
+// ----------------------------------------
+// MODAL - VER DETALLE
+// ----------------------------------------
 
 function abrirDetalle(filaNum) {
   const caso = App.casos.find(c => c.fila === filaNum);
@@ -295,32 +295,32 @@ function abrirDetalle(filaNum) {
   document.getElementById("modalCuerpo").innerHTML = `
     <div class="detalle-grid">
       <div><p class="detalle-campo">Alumno</p><p class="detalle-valor">${esc(caso.nombreAlumno)}</p></div>
-      <div><p class="detalle-campo">ID Alumno</p><p class="detalle-valor">${esc(caso.idAlumno) || "—"}</p></div>
+      <div><p class="detalle-campo">ID Alumno</p><p class="detalle-valor">${esc(caso.idAlumno) || "-"}</p></div>
       <div><p class="detalle-campo">Fecha de Registro</p><p class="detalle-valor">${esc(caso.fechaRegistro)}</p></div>
       <div><p class="detalle-campo">Estado</p><p class="detalle-valor"><span class="badge ${badgeEstado(caso.estado)}">${esc(caso.estado)}</span></p></div>
       <div><p class="detalle-campo">Sede</p><p class="detalle-valor">${esc(caso.sede)}</p></div>
-      <div><p class="detalle-campo">Área / Programa</p><p class="detalle-valor">${esc(caso.areaPrograma)}</p></div>
+      <div><p class="detalle-campo">Area / Programa</p><p class="detalle-valor">${esc(caso.areaPrograma)}</p></div>
       <div><p class="detalle-campo">Departamento</p><p class="detalle-valor"><span class="badge badge-${caso.departamento.toLowerCase()}">${esc(caso.departamento)}</span></p></div>
       <div><p class="detalle-campo">Tipo</p><p class="detalle-valor">${esc(caso.tipoPlanteamiento)}</p></div>
-      <div><p class="detalle-campo">Nivel</p><p class="detalle-valor">${esc(caso.nivel) || "—"}</p></div>
-      <div><p class="detalle-campo">Categoría</p><p class="detalle-valor">${esc(caso.categoriaCurso) || "—"}</p></div>
-      <div><p class="detalle-campo">Profesor</p><p class="detalle-valor">${esc(caso.profesor) || "—"}</p></div>
-      <div><p class="detalle-campo">Horario</p><p class="detalle-valor">${esc(caso.horario) || "—"}</p></div>
-      <div><p class="detalle-campo">Email Contacto</p><p class="detalle-valor">${caso.emailContacto ? `<a href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(caso.emailContacto)}" target="_blank" class="detalle-link">${esc(caso.emailContacto)}</a>` : "—"}</p></div>
-      <div><p class="detalle-campo">Teléfono</p><p class="detalle-valor">${caso.telefono ? `<a href="https://wa.me/${cleanPhone(caso.telefono)}" target="_blank" class="detalle-link">${esc(caso.telefono)}</a>` : "—"}</p></div>
+      <div><p class="detalle-campo">Nivel</p><p class="detalle-valor">${esc(caso.nivel) || "-"}</p></div>
+      <div><p class="detalle-campo">Categoria</p><p class="detalle-valor">${esc(caso.categoriaCurso) || "-"}</p></div>
+      <div><p class="detalle-campo">Profesor</p><p class="detalle-valor">${esc(caso.profesor) || "-"}</p></div>
+      <div><p class="detalle-campo">Horario</p><p class="detalle-valor">${esc(caso.horario) || "-"}</p></div>
+      <div><p class="detalle-campo">Email Contacto</p><p class="detalle-valor">${caso.emailContacto ? `<a href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(caso.emailContacto)}" target="_blank" class="detalle-link">${esc(caso.emailContacto)}</a>` : "-"}</p></div>
+      <div><p class="detalle-campo">Telefono</p><p class="detalle-valor">${caso.telefono ? `<a href="https://wa.me/${cleanPhone(caso.telefono)}" target="_blank" class="detalle-link">${esc(caso.telefono)}</a>` : "-"}</p></div>
       ${caso.personal ? `<div><p class="detalle-campo">Atendido por</p><p class="detalle-valor">${esc(caso.personal)}</p></div>` : ""}
-      ${caso.fechaResolucion ? `<div><p class="detalle-campo">Fecha Resolución</p><p class="detalle-valor">${esc(caso.fechaResolucion)}</p></div>` : ""}
+      ${caso.fechaResolucion ? `<div><p class="detalle-campo">Fecha Resolucion</p><p class="detalle-valor">${esc(caso.fechaResolucion)}</p></div>` : ""}
       ${caso.tiempoRespuesta ? `<div><p class="detalle-campo">Tiempo de Respuesta</p><p class="detalle-valor">${esc(caso.tiempoRespuesta)}</p></div>` : ""}
     </div>
-    <p class="detalle-campo">Descripción del caso</p>
+    <p class="detalle-campo">Descripcion del caso</p>
     <div class="detalle-descripcion">${esc(caso.descripcion)}</div>
     ${caso.accionSolicitada ? `
-      <p class="detalle-campo" style="margin-top:14px">Acción solicitada</p>
+      <p class="detalle-campo" style="margin-top:14px">Accion solicitada</p>
       <div class="detalle-descripcion" style="border-left-color:var(--dorado)">${esc(caso.accionSolicitada)}</div>
     ` : ""}
     ${caso.comentarios ? `
       <hr class="modal-separador">
-      <p class="detalle-campo">Comentarios de resolución</p>
+      <p class="detalle-campo">Comentarios de resolucion</p>
       <div class="detalle-descripcion" style="border-left-color:var(--verde)">${esc(caso.comentarios)}</div>
     ` : ""}
   `;
@@ -339,9 +339,9 @@ function abrirDetalle(filaNum) {
   abrirModal();
 }
 
-// ─────────────────────────────────────
-// MODAL — TOMAR CASO
-// ─────────────────────────────────────
+// ----------------------------------------
+// MODAL - TOMAR CASO
+// ----------------------------------------
 
 function abrirModalTomar(filaNum) {
   const caso = App.casos.find(c => c.fila === filaNum);
@@ -351,7 +351,7 @@ function abrirModalTomar(filaNum) {
   document.getElementById("modalTitulo").textContent = "Tomar Caso";
   document.getElementById("modalCuerpo").innerHTML = `
     <p style="margin-bottom:16px;color:var(--texto-suave);font-size:.9rem">
-      Confirma que tomarás el caso <strong>${esc(caso.idCaso)}</strong> de <strong>${esc(caso.nombreAlumno)}</strong>.
+      Confirma que tomara el caso <strong>${esc(caso.idCaso)}</strong> de <strong>${esc(caso.nombreAlumno)}</strong>.
     </p>
     <div class="campo-grupo">
       <label class="campo-label" for="inputPersonalTomar">Tu nombre completo</label>
@@ -362,7 +362,7 @@ function abrirModalTomar(filaNum) {
   document.getElementById("modalPie").innerHTML = `
     <button class="btn btn-secundario" onclick="cerrarModal()">Cancelar</button>
     <button class="btn btn-accion" id="btnConfirmarTomar" onclick="confirmarTomarCaso()">
-      Confirmar — Tomar Caso
+      Confirmar - Tomar Caso
     </button>
   `;
   abrirModal();
@@ -374,7 +374,7 @@ function confirmarTomarCaso() {
 
   const btn = document.getElementById("btnConfirmarTomar");
   btn.disabled = true;
-  btn.textContent = "Guardando…";
+  btn.textContent = "Guardando...";
 
   google.script.run
     .withSuccessHandler(res => {
@@ -387,15 +387,15 @@ function confirmarTomarCaso() {
       }
     })
     .withFailureHandler(err => {
-      btn.disabled = false; btn.textContent = "Confirmar — Tomar Caso";
+      btn.disabled = false; btn.textContent = "Confirmar - Tomar Caso";
       mostrarToast("Error del servidor: " + err.message, "error");
     })
     .tomarCaso(App.casoActivo.fila, personal, App.rol);
 }
 
-// ─────────────────────────────────────
-// MODAL — RESOLVER CASO
-// ─────────────────────────────────────
+// ----------------------------------------
+// MODAL - RESOLVER CASO
+// ----------------------------------------
 
 function abrirModalResolver(filaNum) {
   const caso = App.casos.find(c => c.fila === filaNum);
@@ -405,20 +405,20 @@ function abrirModalResolver(filaNum) {
   document.getElementById("modalTitulo").textContent = "Resolver Caso";
   document.getElementById("modalCuerpo").innerHTML = `
     <p style="margin-bottom:16px;color:var(--texto-suave);font-size:.9rem">
-      Cierra el caso <strong>${esc(caso.idCaso)}</strong>. Esta acción es permanente.
+      Cierra el caso <strong>${esc(caso.idCaso)}</strong>. Esta accion es permanente.
     </p>
     <div class="campo-grupo">
       <label class="campo-label" for="inputPersonalResolver">Tu nombre completo</label>
       <input type="text" id="inputPersonalResolver" class="campo-input"
-        value="${esc(caso.personal || App.usuario)}" placeholder="Nombre del agente que resolvió">
+        value="${esc(caso.personal || App.usuario)}" placeholder="Nombre del agente que resolvio">
     </div>
     <div class="campo-grupo">
       <label class="campo-label" for="textareaComentarios">
-        Comentarios de solución <span style="color:var(--rojo)">*</span>
+        Comentarios de solucion <span style="color:var(--rojo)">*</span>
       </label>
       <textarea id="textareaComentarios" class="campo-input"
         rows="4"
-        placeholder="Describe detalladamente la solución aplicada…"
+        placeholder="Describe detalladamente la solucion aplicada..."
         style="resize:vertical;min-height:90px"></textarea>
     </div>
   `;
@@ -440,7 +440,7 @@ function confirmarResolverCaso() {
 
   const btn = document.getElementById("btnConfirmarResolver");
   btn.disabled = true;
-  btn.textContent = "Guardando…";
+  btn.textContent = "Guardando...";
 
   google.script.run
     .withSuccessHandler(res => {
@@ -459,9 +459,9 @@ function confirmarResolverCaso() {
     .resolverCaso(App.casoActivo.fila, personal, comentarios, App.rol);
 }
 
-// ─────────────────────────────────────
+// ----------------------------------------
 // CONTROL DEL MODAL
-// ─────────────────────────────────────
+// ----------------------------------------
 
 function abrirModal() {
   document.getElementById("modalFondo").classList.remove("oculto");
@@ -477,14 +477,14 @@ function cerrarModalSiFondo(e) {
 }
 document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarModal(); });
 
-// ─────────────────────────────────────
-// ANALÍTICA — GRÁFICOS
-// ─────────────────────────────────────
+// ----------------------------------------
+// ANALITICA - GRAFICOS
+// ----------------------------------------
 
 function cargarEstadisticas() {
   google.script.run
     .withSuccessHandler(renderizarGraficos)
-    .withFailureHandler(err => mostrarToast("Error al cargar estadísticas: " + err.message, "error"))
+    .withFailureHandler(err => mostrarToast("Error al cargar estadisticas: " + err.message, "error"))
     .getEstadisticas();
 }
 
@@ -547,7 +547,7 @@ function renderizarGraficos(stats) {
     }]
   }, opcBase);
 
-  // 4. Por Área (bar horizontal)
+  // 4. Por Area (bar horizontal)
   const areasKeys = Object.keys(stats.porArea).sort((a,b) => stats.porArea[b] - stats.porArea[a]);
   crearGrafico("graficoArea", "bar", {
     labels: areasKeys,
@@ -609,9 +609,9 @@ function crearGrafico(canvasId, tipo, datos, opciones) {
   });
 }
 
-// ─────────────────────────────────────
+// ----------------------------------------
 // HELPERS DE UI
-// ─────────────────────────────────────
+// ----------------------------------------
 
 function mostrarCarga(estado) {
   document.getElementById("estadoCarga").classList.toggle("oculto", !estado);
@@ -652,12 +652,12 @@ function esc(str) {
 
 function truncar(str, max) {
   if (!str) return "";
-  return str.length > max ? str.slice(0, max) + "…" : str;
+  return str.length > max ? str.slice(0, max) + "..." : str;
 }
 
-// ─────────────────────────────────────
-// LIMPIEZA DE TELÉFONO PARA WHATSAPP
-// ─────────────────────────────────────
+// ----------------------------------------
+// LIMPIEZA DE TELEFONO PARA WHATSAPP
+// ----------------------------------------
 
 function cleanPhone(phone) {
   if (!phone) return "#";
@@ -668,9 +668,9 @@ function cleanPhone(phone) {
   return cleaned;
 }
 
-// ─────────────────────────────────────
-// TAB EN VIVO — CASOS PENDIENTES
-// ─────────────────────────────────────
+// ----------------------------------------
+// TAB EN VIVO - CASOS PENDIENTES
+// ----------------------------------------
 
 function cargarCasosEnVivo() {
   const cargaEl = document.getElementById("envivoEstadoCarga");
@@ -705,7 +705,7 @@ function cargarCasosEnVivo() {
 
       const metaEl = document.getElementById("metaEnvivo");
       if (metaEl) {
-        metaEl.textContent = "Última actualización: " + new Date().toLocaleTimeString("es-VE");
+        metaEl.textContent = "Ultima actualizacion: " + new Date().toLocaleTimeString("es-VE");
       }
     })
     .withFailureHandler(err => {
@@ -740,7 +740,7 @@ function verificarCasosNuevosEnVivo() {
       // Actualizar timestamp
       const metaEl = document.getElementById("metaEnvivo");
       if (metaEl) {
-        metaEl.textContent = "Última actualización: " + new Date().toLocaleTimeString("es-VE");
+        metaEl.textContent = "Ultima actualizacion: " + new Date().toLocaleTimeString("es-VE");
       }
 
       // Notificar solo si hay casos nuevos
@@ -777,7 +777,7 @@ function renderizarTablaEnvivo(casos) {
       </span></td>
       <td class="acciones-celda">
         ${caso.telefono ? `<a href="https://wa.me/${cleanPhone(caso.telefono)}" target="_blank" class="btn-contacto btn-whatsapp" title="WhatsApp">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.82 13.5c-.22.63-1.3 1.2-1.78 1.23-.46.02-.85.22-2.85-.6-2.41-1.07-3.95-3.77-4.07-3.94-.12-.17-.99-1.4-.99-2.67 0-1.27.67-1.9 1.01-2.16.34-.26.74-.32.99-.32.25 0 .49.01.71.01.22.02.52-.08.81.62.29.7.99 2.43 1.08 2.6.09.17.14.37.03.6-.12.23-.17.37-.34.56-.17.2-.36.44-.51.59-.17.17-.35.35-.15.69.2.34.9 1.49 1.94 2.42 1.34 1.2 2.48 1.58 2.84 1.75.36.17.57.14.78-.08.21-.22.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.1 1 2.46 1.18.36.18.59.27.68.42.09.15.09.87-.13 1.5z"/></svg>
         </a>` : ''}
         ${caso.emailContacto ? `<a href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(caso.emailContacto)}" target="_blank" class="btn-contacto btn-email" title="Enviar email por Gmail">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -818,8 +818,8 @@ function mostrarNotificacionEnvivo(caso, cantidad) {
   toast.innerHTML = `
     <div class="toast-whatsapp-titulo">Nuevo caso pendiente</div>
     <div class="toast-whatsapp-id">${esc(caso.idCaso)}</div>
-    <div class="toast-whatsapp-info">${esc(caso.nombreAlumno)} — ${esc(caso.sede.replace("CEVAZ ", ""))} · ${esc(caso.tipoPlanteamiento)}</div>
-    ${cantidad > 1 ? `<div class="toast-whatsapp-info">+${cantidad - 1} caso(s) más</div>` : ''}
+    <div class="toast-whatsapp-info">${esc(caso.nombreAlumno)} - ${esc(caso.sede.replace("CEVAZ ", ""))} | ${esc(caso.tipoPlanteamiento)}</div>
+    ${cantidad > 1 ? `<div class="toast-whatsapp-info">+${cantidad - 1} caso(s) mas</div>` : ''}
   `;
   contenedor.appendChild(toast);
   setTimeout(() => toast.remove(), 8000);
