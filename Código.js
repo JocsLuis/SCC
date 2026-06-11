@@ -305,6 +305,20 @@ function getCasos(filtros) {
     if (f.sede        && f.sede        !== "Todos" && caso.sede        !== f.sede)        return false;
     if (f.departamento && f.departamento !== "Todos" && caso.departamento !== f.departamento) return false;
     if (f.estado      && f.estado      !== "Todos" && caso.estado      !== f.estado)      return false;
+
+    // Filtro por fecha
+    if (f.fechaDesde || f.fechaHasta) {
+      const fechaCaso = parsearFechaRegistro_(caso.fechaRegistro);
+      if (f.fechaDesde) {
+        const desde = new Date(f.fechaDesde + "T00:00:00");
+        if (fechaCaso < desde) return false;
+      }
+      if (f.fechaHasta) {
+        const hasta = new Date(f.fechaHasta + "T23:59:59");
+        if (fechaCaso > hasta) return false;
+      }
+    }
+
     return true;
   });
 }
@@ -582,6 +596,30 @@ function validarEntrada_(params) {
   }
   if (params.comentarios !== undefined && (!params.comentarios || !params.comentarios.trim())) {
     throw new Error("Los comentarios de solución son obligatorios.");
+  }
+}
+
+/**
+ * Parsea una fecha en formato "dd/MM/yyyy HH:mm" a objeto Date.
+ * @param {string} fechaStr - Fecha en formato "dd/MM/yyyy HH:mm"
+ * @returns {Date}
+ */
+function parsearFechaRegistro_(fechaStr) {
+  if (!fechaStr) return new Date(0);
+  try {
+    const partes = fechaStr.split(" ");
+    const fechaPart = partes[0].split("/");
+    const horaPart = partes[1] || "00:00";
+    const [hora, minuto] = horaPart.split(":");
+    return new Date(
+      parseInt(fechaPart[2]),
+      parseInt(fechaPart[1]) - 1,
+      parseInt(fechaPart[0]),
+      parseInt(hora),
+      parseInt(minuto)
+    );
+  } catch {
+    return new Date(0);
   }
 }
 

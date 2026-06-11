@@ -675,6 +675,77 @@ body {
 @keyframes toastSalir   { to   { transform: translateX(24px); opacity: 0 } }
 
 /* ───────────────────────────────────────
+   TOAST WHATSAPP (En Vivo)
+─────────────────────────────────────── */
+.toast-whatsapp {
+  background: #25D366;
+  max-width: 360px;
+  padding: 16px 20px;
+  animation: toastEntrar .2s ease;
+}
+.toast-whatsapp-titulo {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+.toast-whatsapp-id {
+  font-size: 0.8rem;
+  opacity: .85;
+  margin-bottom: 2px;
+}
+.toast-whatsapp-info {
+  font-size: 0.82rem;
+  margin-top: 4px;
+  opacity: .9;
+}
+
+/* ───────────────────────────────────────
+   ICONOS DE CONTACTO (tabla y modal)
+─────────────────────────────────────── */
+.btn-contacto {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 4px;
+  transition: all .12s;
+  text-decoration: none;
+}
+.btn-whatsapp { color: #25D366; }
+.btn-whatsapp:hover { background: #E8F8F0; }
+.btn-email    { color: var(--azul-claro); }
+.btn-email:hover { background: var(--azul-badge-bg); }
+
+.detalle-link {
+  color: var(--azul-claro);
+  text-decoration: none;
+  transition: color .12s;
+}
+.detalle-link:hover {
+  color: var(--azul-profundo);
+  text-decoration: underline;
+}
+
+/* ───────────────────────────────────────
+   BADGE NUEVO (En Vivo)
+─────────────────────────────────────── */
+.badge-nuevo {
+  display: inline-block;
+  background: var(--rojo);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 6px;
+  animation: parpadear 1.5s ease infinite;
+  vertical-align: middle;
+}
+@keyframes parpadear {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+/* ───────────────────────────────────────
    RESPONSIVE
 ─────────────────────────────────────── */
 @media (max-width: 900px) {
