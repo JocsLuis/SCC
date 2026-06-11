@@ -241,7 +241,7 @@ function generarBotonesAccion(caso) {
   }
 
   if (caso.emailContacto) {
-    html += `<a href="mailto:${caso.emailContacto}" class="btn-contacto btn-email" title="Enviar email">
+    html += `<a href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(caso.emailContacto)}" target="_blank" class="btn-contacto btn-email" title="Enviar email por Gmail">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
     </a>`;
   }
@@ -306,7 +306,7 @@ function abrirDetalle(filaNum) {
       <div><p class="detalle-campo">Categoría</p><p class="detalle-valor">${esc(caso.categoriaCurso) || "—"}</p></div>
       <div><p class="detalle-campo">Profesor</p><p class="detalle-valor">${esc(caso.profesor) || "—"}</p></div>
       <div><p class="detalle-campo">Horario</p><p class="detalle-valor">${esc(caso.horario) || "—"}</p></div>
-      <div><p class="detalle-campo">Email Contacto</p><p class="detalle-valor">${caso.emailContacto ? `<a href="mailto:${caso.emailContacto}" class="detalle-link">${esc(caso.emailContacto)}</a>` : "—"}</p></div>
+      <div><p class="detalle-campo">Email Contacto</p><p class="detalle-valor">${caso.emailContacto ? `<a href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(caso.emailContacto)}" target="_blank" class="detalle-link">${esc(caso.emailContacto)}</a>` : "—"}</p></div>
       <div><p class="detalle-campo">Teléfono</p><p class="detalle-valor">${caso.telefono ? `<a href="https://wa.me/${cleanPhone(caso.telefono)}" target="_blank" class="detalle-link">${esc(caso.telefono)}</a>` : "—"}</p></div>
       ${caso.personal ? `<div><p class="detalle-campo">Atendido por</p><p class="detalle-valor">${esc(caso.personal)}</p></div>` : ""}
       ${caso.fechaResolucion ? `<div><p class="detalle-campo">Fecha Resolución</p><p class="detalle-valor">${esc(caso.fechaResolucion)}</p></div>` : ""}
