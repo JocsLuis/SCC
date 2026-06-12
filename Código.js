@@ -77,6 +77,14 @@ function configurarSpreadsheetId() {
   Logger.log("SPREADSHEET_ID configurado correctamente.");
 }
 
+/**
+ * Retorna la URL completa de la hoja de cálculo para abrir desde el cliente.
+ */
+function getUrlHojaCalculo() {
+  const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  return "https://docs.google.com/spreadsheets/d/" + id + "/edit";
+}
+
 // =============================================================================
 // PUNTO DE ENTRADA — doGet()
 // =============================================================================

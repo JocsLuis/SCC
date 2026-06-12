@@ -782,6 +782,9 @@ function renderizarTablaEnvivo(casos) {
         ${caso.emailContacto ? `<a href="mailto:${caso.emailContacto}" class="btn-contacto btn-email" title="Enviar email">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         </a>` : ''}
+        <button class="btn-tabla btn-tabla-ver" onclick="abrirDetalle(${caso.fila})">Ver</button>
+        ${(App.rol === "Administrador" || caso.departamento === App.rol) ? `<button class="btn-tabla btn-tabla-tomar" onclick="abrirModalTomar(${caso.fila})">Tomar</button>` : ''}
+        ${App.rol === "Administrador" ? `<button class="btn-tabla btn-bd" onclick="abrirHojaCalculo()">BD</button>` : ''}
       </td>
     `;
     tbody.appendChild(tr);
@@ -823,5 +826,16 @@ function mostrarNotificacionEnvivo(caso, cantidad) {
   `;
   contenedor.appendChild(toast);
   setTimeout(() => toast.remove(), 8000);
+}
+
+// ----------------------------------------
+// ABRIR HOJA DE CÁLCULO (BD)
+// ----------------------------------------
+
+function abrirHojaCalculo() {
+  google.script.run
+    .withSuccessHandler(function(url) { window.open(url, "_blank"); })
+    .withFailureHandler(function(err) { mostrarToast("Error al obtener URL: " + err.message, "error"); })
+    .getUrlHojaCalculo();
 }
 </script>
