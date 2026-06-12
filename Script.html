@@ -942,6 +942,7 @@ function renderizarTablaUsuarios() {
       <td>${esc(u.nombre)}</td>
       <td>${esc(u.sede.replace("CEVAZ ", ""))}</td>
       <td>${esc(u.departamento)}</td>
+      <td>${esc(u.rol)}</td>
       <td class="usuarios-col-acciones">
         <div class="usuarios-acciones">
           <button onclick="abrirModalEditarUsuario(${u.fila}, ${u._idx})" title="Editar">
@@ -986,6 +987,7 @@ function abrirModalCrearUsuario() {
   document.getElementById("inputUsuarioTelefono").value = "";
   document.getElementById("selectUsuarioSede").value = "";
   document.getElementById("selectUsuarioDepto").value = "";
+  document.getElementById("selectUsuarioRol").value = "";
   document.getElementById("modalUsuarioFondo").classList.remove("oculto");
 }
 
@@ -999,6 +1001,7 @@ function abrirModalEditarUsuario(fila, indice) {
   document.getElementById("inputUsuarioTelefono").value = usuario.telefono;
   document.getElementById("selectUsuarioSede").value = usuario.sede;
   document.getElementById("selectUsuarioDepto").value = usuario.departamento;
+  document.getElementById("selectUsuarioRol").value = usuario.rol;
   document.getElementById("modalUsuarioFondo").classList.remove("oculto");
 }
 
@@ -1009,13 +1012,15 @@ function guardarUsuario() {
   const telefono = document.getElementById("inputUsuarioTelefono").value.trim();
   const sede    = document.getElementById("selectUsuarioSede").value;
   const depto   = document.getElementById("selectUsuarioDepto").value;
+  const rol     = document.getElementById("selectUsuarioRol").value;
 
   if (!nombre) { mostrarToast("El nombre es obligatorio.", "alerta"); return; }
   if (!correo) { mostrarToast("El correo es obligatorio.", "alerta"); return; }
   if (!sede)   { mostrarToast("Selecciona una sede.", "alerta"); return; }
   if (!depto)  { mostrarToast("Selecciona un departamento.", "alerta"); return; }
+  if (!rol)    { mostrarToast("Selecciona un rol / cargo.", "alerta"); return; }
 
-  const usuario = { nombre, correo, telefono, sede, departamento: depto };
+  const usuario = { nombre, correo, telefono, sede, departamento: depto, rol };
 
   const esEdicion = !!fila;
   const btnGuardar = document.querySelector("#modalUsuarioFondo .btn-exito");

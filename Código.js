@@ -49,11 +49,12 @@ const CONFIG = {
 
   USUARIOS_SHEET: "Usuarios",
   USUARIOS_COLS: {
-    NOMBRE:      0,  // A
-    CORREO:      1,  // B
-    TELEFONO:    2,  // C
-    SEDE:        3,  // D
-    DEPARTAMENTO: 4  // E
+    NOMBRE:       0,  // A
+    CORREO:       1,  // B
+    TELEFONO:     2,  // C
+    SEDE:         3,  // D
+    DEPARTAMENTO: 4,  // E
+    ROL:          5   // F
   }
 };
 
@@ -234,6 +235,25 @@ function onFormSubmit(e) {
     ]);
 
     Logger.log(`Caso creado: ${idCaso} → ${departamento}`);
+
+    // Enviar correo si es QUEJA
+    const tipoPlanteamiento = fila[CONFIG.COLS.TIPO_PLANTEAMIENTO] || "";
+    if (tipoPlanteamiento.includes("QUEJA")) {
+      enviarCorreoQueja({
+        idCaso,
+        marcaTemporal,
+        nombreAlumno:    fila[CONFIG.COLS.NOMBRE_ALUMNO]    || "",
+        idAlumno:        fila[CONFIG.COLS.ID_ALUMNO]        || "",
+        sede:            fila[CONFIG.COLS.SEDE]              || "",
+        departamento,
+        areaPrograma:    area,
+        profesor:        fila[CONFIG.COLS.PROFESOR]         || "",
+        horario:         fila[CONFIG.COLS.HORARIO]          || "",
+        telefono:        fila[CONFIG.COLS.TELEFONO]         || "",
+        descripcion:     fila[CONFIG.COLS.DESCRIPCION]      || "",
+        accionSolicitada: fila[CONFIG.COLS.ACCION_SOLICITADA] || ""
+      });
+    }
   } catch (err) {
     Logger.log(`Error en onFormSubmit: ${err.message}`);
   }
@@ -642,8 +662,8 @@ function getUsuariosSheet_() {
   let sheet = ss.getSheetByName(CONFIG.USUARIOS_SHEET);
   if (!sheet) {
     sheet = ss.insertSheet(CONFIG.USUARIOS_SHEET);
-    sheet.appendRow(["Nombre", "Correo", "Teléfono", "Sede", "Departamento"]);
-    sheet.getRange(1, 1, 1, 5).setFontWeight("bold").setBackground("#f0f0f0");
+    sheet.appendRow(["Nombre", "Correo", "Teléfono", "Sede", "Departamento", "Rol"]);
+    sheet.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#f0f0f0");
     sheet.setFrozenRows(1);
   }
   return sheet;
@@ -665,7 +685,8 @@ function getUsuarios() {
       correo:       row[CONFIG.USUARIOS_COLS.CORREO]      || "",
       telefono:     row[CONFIG.USUARIOS_COLS.TELEFONO]    || "",
       sede:         row[CONFIG.USUARIOS_COLS.SEDE]        || "",
-      departamento: row[CONFIG.USUARIOS_COLS.DEPARTAMENTO] || ""
+      departamento: row[CONFIG.USUARIOS_COLS.DEPARTAMENTO] || "",
+      rol:          row[CONFIG.USUARIOS_COLS.ROL]          || ""
     }));
   } catch (e) {
     Logger.log("Error getUsuarios: " + e.message);
@@ -674,7 +695,7 @@ function getUsuarios() {
 }
 
 /**
- * Crea un usuario nuevo. Recibe un objeto con nombre, correo, telefono, sede, departamento.
+ * Crea un usuario nuevo. Recibe un objeto con nombre, correo, telefono, sede, departamento, rol.
  */
 function crearUsuario(usuario) {
   try {
@@ -684,7 +705,8 @@ function crearUsuario(usuario) {
       usuario.correo      || "",
       usuario.telefono    || "",
       usuario.sede        || "",
-      usuario.departamento || ""
+      usuario.departamento || "",
+      usuario.rol          || ""
     ]);
     return { exito: true, mensaje: "Usuario creado correctamente." };
   } catch (e) {
@@ -707,6 +729,7 @@ function editarUsuario(filaNum, usuario) {
     sheet.getRange(filaNum, 3).setValue(usuario.telefono    || "");
     sheet.getRange(filaNum, 4).setValue(usuario.sede        || "");
     sheet.getRange(filaNum, 5).setValue(usuario.departamento || "");
+    sheet.getRange(filaNum, 6).setValue(usuario.rol          || "");
     return { exito: true, mensaje: "Usuario actualizado correctamente." };
   } catch (e) {
     return { exito: false, mensaje: "Error al editar usuario: " + e.message };
@@ -727,6 +750,115 @@ function eliminarUsuario(filaNum) {
     return { exito: true, mensaje: "Usuario eliminado correctamente." };
   } catch (e) {
     return { exito: false, mensaje: "Error al eliminar usuario: " + e.message };
+  }
+}
+
+// =============================================================================
+// ENVÍO DE CORREO — QUEJAS
+// =============================================================================
+
+/**
+ * Escapa HTML para usar en templates de correo (server-side).
+ */
+function escHtml_(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Busca los destinatarios para correo de QUEJA.
+ * Admin siempre recibe. Supervisor del mismo depto y sede también.
+ */
+function buscarDestinatariosQueja_(departamento, sede) {
+  const sheet = getUsuariosSheet_();
+  const data  = sheet.getDataRange().getValues();
+  const C     = CONFIG.USUARIOS_COLS;
+  const destinatarios = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const row  = data[i];
+    const rol  = (row[C.ROL] || "").toLowerCase();
+    const correo = row[C.CORREO] || "";
+    const sedeUsuario = row[C.SEDE] || "";
+
+    if (!correo) continue;
+
+    if (rol.includes("administrador")) {
+      destinatarios.push(correo);
+    } else if (rol.includes("supervisor") &&
+               rol.includes(departamento.toLowerCase()) &&
+               sedeUsuario === sede) {
+      destinatarios.push(correo);
+    }
+  }
+  return destinatarios;
+}
+
+/**
+ * Genera el template HTML para el correo de QUEJA.
+ */
+function generarTemplateQueja_(datos) {
+  const d = datos;
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head><meta charset="UTF-8"></head>
+  <body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+    <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1);">
+      <div style="background:#C0392B;color:#fff;padding:20px 24px;">
+        <h1 style="margin:0;font-size:18px;">NUEVA QUEJA REGISTRADA</h1>
+        <p style="margin:6px 0 0;opacity:.9;font-size:14px;">${escHtml_(d.idCaso)}</p>
+      </div>
+      <div style="padding:20px 24px;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <tr><td style="padding:8px 0;color:#666;width:140px;"><strong>Alumno</strong></td><td style="padding:8px 0;">${escHtml_(d.nombreAlumno)}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;"><strong>ID Alumno</strong></td><td style="padding:8px 0;">${escHtml_(d.idAlumno)}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;"><strong>Sede</strong></td><td style="padding:8px 0;">${escHtml_(d.sede)}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;"><strong>Departamento</strong></td><td style="padding:8px 0;">${escHtml_(d.departamento)}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;"><strong>Área</strong></td><td style="padding:8px 0;">${escHtml_(d.areaPrograma)}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;"><strong>Profesor</strong></td><td style="padding:8px 0;">${escHtml_(d.profesor)}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;"><strong>Horario</strong></td><td style="padding:8px 0;">${escHtml_(d.horario)}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;"><strong>Teléfono</strong></td><td style="padding:8px 0;">${escHtml_(d.telefono)}</td></tr>
+          <tr><td colspan="2" style="padding:8px 0;border-top:1px solid #eee;"></td></tr>
+          <tr><td style="padding:8px 0;color:#666;vertical-align:top;"><strong>Descripción</strong></td><td style="padding:8px 0;">${escHtml_(d.descripcion)}</td></tr>
+          ${d.accionSolicitada ? `<tr><td style="padding:8px 0;color:#666;vertical-align:top;"><strong>Acción solicitada</strong></td><td style="padding:8px 0;">${escHtml_(d.accionSolicitada)}</td></tr>` : ""}
+        </table>
+      </div>
+      <div style="background:#f9f9f9;padding:16px 24px;text-align:center;border-top:1px solid #eee;">
+        <p style="margin:0;font-size:12px;color:#999;">Generado automáticamente por CEVAZ — Sistema de Control de Casos</p>
+      </div>
+    </div>
+  </body>
+  </html>`;
+}
+
+/**
+ * Envía correo cuando se registra una QUEJA.
+ * Busca destinatarios (Admin + Supervisor del depto/sede) y envía el template HTML.
+ */
+function enviarCorreoQueja(datos) {
+  try {
+    const destinatarios = buscarDestinatariosQueja_(datos.departamento, datos.sede);
+    if (destinatarios.length === 0) {
+      Logger.log("No se encontraron destinatarios para queja " + datos.idCaso);
+      return;
+    }
+
+    const asunto  = `QUEJA — ${datos.idCaso} — ${datos.nombreAlumno}`;
+    const htmlBody = generarTemplateQueja_(datos);
+
+    GmailApp.sendEmail(destinatarios.join(","), asunto, "", {
+      htmlBody: htmlBody,
+      name: "CEVAZ — Sistema de Casos"
+    });
+
+    Logger.log(`Correo enviado: ${datos.idCaso} → ${destinatarios.join(", ")}`);
+  } catch (e) {
+    Logger.log("Error enviando correo de queja: " + e.message);
   }
 }
 
