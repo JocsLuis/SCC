@@ -711,8 +711,7 @@ function cargarCasosEnVivo() {
       if (App.casosEnVivoIds.size > 0) {
         const nuevosIds = casos.filter(c => !App.casosEnVivoIds.has(c.idCaso));
         if (nuevosIds.length > 0) {
-          const casoNuevo = casos.find(c => c.idCaso === nuevosIds[0]);
-          mostrarNotificacionEnvivo(casoNuevo, nuevosIds.length);
+          mostrarNotificacionEnvivo(nuevosIds[0], nuevosIds.length);
         }
       }
 
@@ -764,8 +763,7 @@ function verificarCasosNuevosEnVivo() {
 
       // Notificar solo si hay casos nuevos
       if (nuevosIds.length > 0) {
-        const casoNuevo = casos.find(c => c.idCaso === nuevosIds[0]);
-        mostrarNotificacionEnvivo(casoNuevo, nuevosIds.length);
+        mostrarNotificacionEnvivo(nuevosIds[0], nuevosIds.length);
       }
     })
     .withFailureHandler(err => {
