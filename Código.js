@@ -225,6 +225,13 @@ function onFormSubmit(e) {
     const filaNum = e.range.getRow();
     const fila    = sheet.getRange(filaNum, 1, 1, 15).getValues()[0];
 
+    // Verificar si ya se procesó (evita duplicados por trigger)
+    const idExistente = sheet.getRange(filaNum, CONFIG.COLS.ID_CASO + 1).getValue();
+    if (idExistente) {
+      Logger.log(`Fila ${filaNum} ya procesada (${idExistente}), saltando.`);
+      return;
+    }
+
     const marcaTemporal = fila[CONFIG.COLS.MARCA_TEMPORAL];
     const area          = fila[CONFIG.COLS.AREA_PROGRAMA];
     const idCaso        = generarIdCaso_(marcaTemporal, filaNum);
@@ -771,13 +778,14 @@ function escHtml_(str) {
 
 /**
  * Busca los destinatarios para correo de QUEJA.
- * Admin siempre recibe. Supervisor del mismo depto y sede también.
+ * Retorna { admin: [...], supervisores: [...] }
  */
 function buscarDestinatariosQueja_(departamento, sede) {
   const sheet = getUsuariosSheet_();
   const data  = sheet.getDataRange().getValues();
   const C     = CONFIG.USUARIOS_COLS;
-  const destinatarios = [];
+  const admin = [];
+  const supervisores = [];
 
   for (let i = 1; i < data.length; i++) {
     const row  = data[i];
@@ -788,14 +796,14 @@ function buscarDestinatariosQueja_(departamento, sede) {
     if (!correo) continue;
 
     if (rol.includes("administrador")) {
-      destinatarios.push(correo);
+      admin.push(correo);
     } else if (rol.includes("supervisor") &&
                rol.includes(departamento.toLowerCase()) &&
                sedeUsuario === sede) {
-      destinatarios.push(correo);
+      supervisores.push(correo);
     }
   }
-  return destinatarios;
+  return { admin, supervisores };
 }
 
 /**
@@ -838,25 +846,30 @@ function generarTemplateQueja_(datos) {
 
 /**
  * Envía correo cuando se registra una QUEJA.
- * Busca destinatarios (Admin + Supervisor del depto/sede) y envía el template HTML.
+ * Admin recibe como principal. Supervisores del depto/sede reciben en copia (CC).
  */
 function enviarCorreoQueja(datos) {
   try {
-    const destinatarios = buscarDestinatariosQueja_(datos.departamento, datos.sede);
-    if (destinatarios.length === 0) {
+    const { admin, supervisores } = buscarDestinatariosQueja_(datos.departamento, datos.sede);
+    if (admin.length === 0 && supervisores.length === 0) {
       Logger.log("No se encontraron destinatarios para queja " + datos.idCaso);
       return;
     }
 
-    const asunto  = `QUEJA — ${datos.idCaso} — ${datos.nombreAlumno}`;
+    const asunto   = `QUEJA — ${datos.idCaso} — ${datos.nombreAlumno}`;
     const htmlBody = generarTemplateQueja_(datos);
+    const to       = admin.join(",");
+    const cc       = supervisores.join(",");
 
-    GmailApp.sendEmail(destinatarios.join(","), asunto, "", {
+    const opciones = {
       htmlBody: htmlBody,
       name: "CEVAZ — Sistema de Casos"
-    });
+    };
+    if (cc) opciones.cc = cc;
 
-    Logger.log(`Correo enviado: ${datos.idCaso} → ${destinatarios.join(", ")}`);
+    GmailApp.sendEmail(to, asunto, "", opciones);
+
+    Logger.log(`Correo enviado: ${datos.idCaso} → To: ${to}` + (cc ? ` | CC: ${cc}` : ""));
   } catch (e) {
     Logger.log("Error enviando correo de queja: " + e.message);
   }
