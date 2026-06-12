@@ -707,6 +707,15 @@ function cargarCasosEnVivo() {
         return;
       }
 
+      // Detectar casos nuevos antes de actualizar el Set
+      if (App.casosEnVivoIds.size > 0) {
+        const nuevosIds = casos.filter(c => !App.casosEnVivoIds.has(c.idCaso));
+        if (nuevosIds.length > 0) {
+          const casoNuevo = casos.find(c => c.idCaso === nuevosIds[0]);
+          mostrarNotificacionEnvivo(casoNuevo, nuevosIds.length);
+        }
+      }
+
       // Guardar IDs actuales
       App.casosEnVivoIds = new Set(casos.map(c => c.idCaso));
 
