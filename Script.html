@@ -115,6 +115,16 @@ function recargarDatos() {
   cargarEstadisticas();
 }
 
+function limpiarFiltros() {
+  document.getElementById("filtroSede").value = "Todos";
+  document.getElementById("filtroDepartamento").value = "Todos";
+  document.getElementById("filtroEstado").value = "Todos";
+  document.getElementById("filtroFechaDesde").value = "";
+  document.getElementById("filtroFechaHasta").value = "";
+  document.getElementById("inputBusqueda").value = "";
+  aplicarFiltros();
+}
+
 function cargarCasos() {
   mostrarCarga(true);
 
