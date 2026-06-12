@@ -52,12 +52,12 @@ function accederAlSistema() {
   cargarCasos();
   cargarEstadisticas();
 
-  // Auto-refresh cada 15 minutos
+  // Auto-refresh cada 7 minutos
   if (App.timerId) clearInterval(App.timerId);
   App.timerId = setInterval(() => {
     cargarCasos();
     cargarEstadisticas();
-  }, 15 * 60 * 1000);
+  }, 7 * 60 * 1000);
 }
 
 function cerrarSesion() {
@@ -95,7 +95,7 @@ function cambiarTab(tabId) {
   if (tabId === "envivo") {
     cargarCasosEnVivo();
     if (!App.timerIdEnVivo) {
-      App.timerIdEnVivo = setInterval(verificarCasosNuevosEnVivo, 5 * 60 * 1000);
+      App.timerIdEnVivo = setInterval(verificarCasosNuevosEnVivo, 7 * 60 * 1000);
     }
   } else {
     if (App.timerIdEnVivo) {
@@ -833,12 +833,13 @@ function esCasoReciente(fechaRegistro) {
 function mostrarNotificacionEnvivo(caso, cantidad) {
   if (!caso) return;
   const contenedor = document.getElementById("toastContainer");
+  const esQueja = (caso.tipoPlanteamiento || "").includes("QUEJA");
   const toast = document.createElement("div");
-  toast.className = "toast toast-whatsapp";
+  toast.className = `toast ${esQueja ? "toast-queja" : "toast-sugerencia"}`;
   toast.innerHTML = `
-    <div class="toast-whatsapp-titulo">Nuevo caso pendiente</div>
+    <div class="toast-whatsapp-titulo">${esQueja ? "Queja" : "Sugerencia"}</div>
     <div class="toast-whatsapp-id">${esc(caso.idCaso)}</div>
-    <div class="toast-whatsapp-info">${esc(caso.nombreAlumno)} — ${esc(caso.sede.replace("CEVAZ ", ""))} · ${esc(caso.tipoPlanteamiento)}</div>
+    <div class="toast-whatsapp-info">${esc(caso.nombreAlumno)} — ${esc(caso.sede.replace("CEVAZ ", ""))}</div>
     ${cantidad > 1 ? `<div class="toast-whatsapp-info">+${cantidad - 1} caso(s) más</div>` : ''}
   `;
   contenedor.appendChild(toast);
