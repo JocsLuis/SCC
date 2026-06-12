@@ -45,8 +45,10 @@ function accederAlSistema() {
   if (rol !== "Administrador") {
     document.getElementById("grupFiltroDep").style.display = "none";
     document.getElementById("filtroDepartamento").value    = rol;
-    document.getElementById("tituloCasos").textContent =
-      `Casos — ${rol}`;
+    document.getElementById("tituloCasos").textContent = `Casos — ${rol}`;
+    document.getElementById("btnMenuUsuarios").classList.add("oculto");
+  } else {
+    document.getElementById("btnMenuUsuarios").classList.remove("oculto");
   }
 
   cargarCasos();
@@ -76,6 +78,9 @@ function cerrarSesion() {
   document.getElementById("pantallaAcceso").style.display = "flex";
   document.getElementById("inputNombreAcceso").value = "";
   document.getElementById("selectRol").value = "";
+  cerrarUserMenu();
+  cerrarModalUsuarios();
+  cerrarModalUsuario();
 }
 
 // ─────────────────────────────────────
@@ -857,5 +862,208 @@ function abrirHojaCalculo() {
     .withSuccessHandler((url) => { window.open(url, "_blank"); })
     .withFailureHandler((err) => { mostrarToast("Error al obtener URL: " + err.message, "error"); })
     .getUrlHojaCalculo();
+}
+
+// ----------------------------------------
+// DROPDOWN MENÚ DE USUARIO
+// ----------------------------------------
+
+function toggleUserMenu() {
+  const dropdown = document.getElementById("userMenuDropdown");
+  dropdown.classList.toggle("oculto");
+}
+
+function cerrarUserMenu() {
+  document.getElementById("userMenuDropdown").classList.add("oculto");
+}
+
+// Cerrar dropdown al hacer clic fuera
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("userMenu");
+  if (menu && !menu.contains(e.target)) cerrarUserMenu();
+});
+
+// ----------------------------------------
+// GESTIÓN DE USUARIOS — PANEL PRINCIPAL
+// ----------------------------------------
+
+let AppUsuarios = { lista: [], filtro: "" };
+
+function abrirPanelUsuarios() {
+  cerrarUserMenu();
+  document.getElementById("inputBuscarUsuarios").value = "";
+  AppUsuarios.filtro = "";
+  cargarUsuarios();
+  document.getElementById("modalUsuariosFondo").classList.remove("oculto");
+}
+
+function cerrarModalUsuarios() {
+  document.getElementById("modalUsuariosFondo").classList.add("oculto");
+}
+
+function cerrarModalUsuariosSiFondo(e) {
+  if (e.target === e.currentTarget) cerrarModalUsuarios();
+}
+
+function cargarUsuarios() {
+  google.script.run
+    .withSuccessHandler(usuarios => {
+      AppUsuarios.lista = usuarios || [];
+      renderizarTablaUsuarios();
+    })
+    .withFailureHandler(err => {
+      mostrarToast("Error al cargar usuarios: " + err.message, "error");
+    })
+    .getUsuarios();
+}
+
+function renderizarTablaUsuarios() {
+  const tbody = document.getElementById("usuariosCuerpo");
+  const vacio = document.getElementById("usuariosEstadoVacio");
+
+  let items = AppUsuarios.lista.map((u, i) => ({ ...u, _idx: i }));
+  if (AppUsuarios.filtro) {
+    const q = AppUsuarios.filtro.toLowerCase();
+    items = items.filter(u =>
+      u.nombre.toLowerCase().includes(q) ||
+      u.correo.toLowerCase().includes(q)
+    );
+  }
+
+  if (items.length === 0) {
+    tbody.innerHTML = "";
+    vacio.classList.remove("oculto");
+    return;
+  }
+  vacio.classList.add("oculto");
+
+  tbody.innerHTML = items.map(u => `
+    <tr>
+      <td>${esc(u.nombre)}</td>
+      <td>${esc(u.sede.replace("CEVAZ ", ""))}</td>
+      <td>${esc(u.departamento)}</td>
+      <td class="usuarios-col-acciones">
+        <div class="usuarios-acciones">
+          <button onclick="abrirModalEditarUsuario(${u.fila}, ${u._idx})" title="Editar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn-eliminar" onclick="confirmarEliminarUsuario(${u.fila}, '${esc(u.nombre).replace(/'/g, "\\'")}')" title="Eliminar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function buscarUsuarios(query) {
+  AppUsuarios.filtro = query;
+  renderizarTablaUsuarios();
+}
+
+// ----------------------------------------
+// GESTIÓN DE USUARIOS — MODAL CREAR / EDITAR
+// ----------------------------------------
+
+function cerrarModalUsuario() {
+  document.getElementById("modalUsuarioFondo").classList.add("oculto");
+}
+
+function cerrarModalUsuarioSiFondo(e) {
+  if (e.target === e.currentTarget) cerrarModalUsuario();
+}
+
+function abrirModalCrearUsuario() {
+  document.getElementById("modalUsuarioTitulo").textContent = "Nuevo Usuario";
+  document.getElementById("usuarioFilaEdit").value = "";
+  document.getElementById("inputUsuarioNombre").value = "";
+  document.getElementById("inputUsuarioCorreo").value = "";
+  document.getElementById("inputUsuarioTelefono").value = "";
+  document.getElementById("selectUsuarioSede").value = "";
+  document.getElementById("selectUsuarioDepto").value = "";
+  document.getElementById("modalUsuarioFondo").classList.remove("oculto");
+}
+
+function abrirModalEditarUsuario(fila, indice) {
+  const usuario = AppUsuarios.lista[indice];
+  if (!usuario) return;
+  document.getElementById("modalUsuarioTitulo").textContent = "Editar Usuario";
+  document.getElementById("usuarioFilaEdit").value = fila;
+  document.getElementById("inputUsuarioNombre").value = usuario.nombre;
+  document.getElementById("inputUsuarioCorreo").value = usuario.correo;
+  document.getElementById("inputUsuarioTelefono").value = usuario.telefono;
+  document.getElementById("selectUsuarioSede").value = usuario.sede;
+  document.getElementById("selectUsuarioDepto").value = usuario.departamento;
+  document.getElementById("modalUsuarioFondo").classList.remove("oculto");
+}
+
+function guardarUsuario() {
+  const fila    = document.getElementById("usuarioFilaEdit").value;
+  const nombre  = document.getElementById("inputUsuarioNombre").value.trim();
+  const correo  = document.getElementById("inputUsuarioCorreo").value.trim();
+  const telefono = document.getElementById("inputUsuarioTelefono").value.trim();
+  const sede    = document.getElementById("selectUsuarioSede").value;
+  const depto   = document.getElementById("selectUsuarioDepto").value;
+
+  if (!nombre) { mostrarToast("El nombre es obligatorio.", "alerta"); return; }
+  if (!correo) { mostrarToast("El correo es obligatorio.", "alerta"); return; }
+  if (!sede)   { mostrarToast("Selecciona una sede.", "alerta"); return; }
+  if (!depto)  { mostrarToast("Selecciona un departamento.", "alerta"); return; }
+
+  const usuario = { nombre, correo, telefono, sede, departamento: depto };
+
+  const esEdicion = !!fila;
+  const handler = (res) => {
+    if (res.exito) {
+      mostrarToast(res.mensaje, "exito");
+      cerrarModalUsuario();
+      cargarUsuarios();
+    } else {
+      mostrarToast(res.mensaje, "error");
+    }
+  };
+
+  if (esEdicion) {
+    google.script.run
+      .withSuccessHandler(handler)
+      .withFailureHandler(err => mostrarToast("Error: " + err.message, "error"))
+      .editarUsuario(parseInt(fila), usuario);
+  } else {
+    google.script.run
+      .withSuccessHandler(handler)
+      .withFailureHandler(err => mostrarToast("Error: " + err.message, "error"))
+      .crearUsuario(usuario);
+  }
+}
+
+// ----------------------------------------
+// GESTIÓN DE USUARIOS — ELIMINAR
+// ----------------------------------------
+
+function confirmarEliminarUsuario(fila, nombre) {
+  document.getElementById("modalTitulo").textContent = "Eliminar Usuario";
+  document.getElementById("modalCuerpo").innerHTML = `
+    <p style="margin-bottom:0">¿Eliminar al usuario <strong>${esc(nombre)}</strong>?</p>
+  `;
+  document.getElementById("modalPie").innerHTML = `
+    <button class="btn btn-secundario" onclick="cerrarModal()">Cancelar</button>
+    <button class="btn btn-peligro" onclick="ejecutarEliminarUsuario(${fila})">Eliminar</button>
+  `;
+  abrirModal();
+}
+
+function ejecutarEliminarUsuario(fila) {
+  google.script.run
+    .withSuccessHandler(res => {
+      if (res.exito) {
+        mostrarToast(res.mensaje, "exito");
+        cerrarModal();
+        cargarUsuarios();
+      } else {
+        mostrarToast(res.mensaje, "error");
+      }
+    })
+    .withFailureHandler(err => mostrarToast("Error: " + err.message, "error"))
+    .eliminarUsuario(fila);
 }
 </script>

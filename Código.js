@@ -45,6 +45,15 @@ const CONFIG = {
     PENDIENTE:   "Pendiente",
     EN_PROCESO:  "En Proceso",
     RESUELTO:    "Resuelto"
+  },
+
+  USUARIOS_SHEET: "Usuarios",
+  USUARIOS_COLS: {
+    NOMBRE:      0,  // A
+    CORREO:      1,  // B
+    TELEFONO:    2,  // C
+    SEDE:        3,  // D
+    DEPARTAMENTO: 4  // E
   }
 };
 
@@ -614,6 +623,110 @@ function parsearFechaRegistro_(fechaStr) {
     );
   } catch {
     return new Date(0);
+  }
+}
+
+// =============================================================================
+// GESTIÓN DE USUARIOS — CRUD sobre pestaña "Usuarios"
+// =============================================================================
+
+/**
+ * Obtiene la pestaña "Usuarios" (la crea si no existe).
+ */
+function getUsuariosSheet_() {
+  const spreadsheetId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  const ss = spreadsheetId
+    ? SpreadsheetApp.openById(spreadsheetId)
+    : SpreadsheetApp.getActiveSpreadsheet();
+
+  let sheet = ss.getSheetByName(CONFIG.USUARIOS_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(CONFIG.USUARIOS_SHEET);
+    sheet.appendRow(["Nombre", "Correo", "Teléfono", "Sede", "Departamento"]);
+    sheet.getRange(1, 1, 1, 5).setFontWeight("bold").setBackground("#f0f0f0");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+/**
+ * Lee todos los usuarios y retorna un array de objetos.
+ * Agrega el número de fila (base-2) para poder editar/eliminar.
+ */
+function getUsuarios() {
+  try {
+    const sheet = getUsuariosSheet_();
+    const data  = sheet.getDataRange().getValues();
+    if (data.length <= 1) return [];
+
+    return data.slice(1).map((row, i) => ({
+      fila:         i + 2,
+      nombre:       row[CONFIG.USUARIOS_COLS.NOMBRE]      || "",
+      correo:       row[CONFIG.USUARIOS_COLS.CORREO]      || "",
+      telefono:     row[CONFIG.USUARIOS_COLS.TELEFONO]    || "",
+      sede:         row[CONFIG.USUARIOS_COLS.SEDE]        || "",
+      departamento: row[CONFIG.USUARIOS_COLS.DEPARTAMENTO] || ""
+    }));
+  } catch (e) {
+    Logger.log("Error getUsuarios: " + e.message);
+    return [];
+  }
+}
+
+/**
+ * Crea un usuario nuevo. Recibe un objeto con nombre, correo, telefono, sede, departamento.
+ */
+function crearUsuario(usuario) {
+  try {
+    const sheet = getUsuariosSheet_();
+    sheet.appendRow([
+      usuario.nombre      || "",
+      usuario.correo      || "",
+      usuario.telefono    || "",
+      usuario.sede        || "",
+      usuario.departamento || ""
+    ]);
+    return { exito: true, mensaje: "Usuario creado correctamente." };
+  } catch (e) {
+    return { exito: false, mensaje: "Error al crear usuario: " + e.message };
+  }
+}
+
+/**
+ * Edita un usuario existente por número de fila (base-2).
+ */
+function editarUsuario(filaNum, usuario) {
+  try {
+    const sheet = getUsuariosSheet_();
+    const lastRow = sheet.getLastRow();
+    if (filaNum < 2 || filaNum > lastRow) {
+      return { exito: false, mensaje: "Número de fila inválido." };
+    }
+    sheet.getRange(filaNum, 1).setValue(usuario.nombre      || "");
+    sheet.getRange(filaNum, 2).setValue(usuario.correo      || "");
+    sheet.getRange(filaNum, 3).setValue(usuario.telefono    || "");
+    sheet.getRange(filaNum, 4).setValue(usuario.sede        || "");
+    sheet.getRange(filaNum, 5).setValue(usuario.departamento || "");
+    return { exito: true, mensaje: "Usuario actualizado correctamente." };
+  } catch (e) {
+    return { exito: false, mensaje: "Error al editar usuario: " + e.message };
+  }
+}
+
+/**
+ * Elimina un usuario por número de fila (base-2).
+ */
+function eliminarUsuario(filaNum) {
+  try {
+    const sheet = getUsuariosSheet_();
+    const lastRow = sheet.getLastRow();
+    if (filaNum < 2 || filaNum > lastRow) {
+      return { exito: false, mensaje: "Número de fila inválido." };
+    }
+    sheet.deleteRow(filaNum);
+    return { exito: true, mensaje: "Usuario eliminado correctamente." };
+  } catch (e) {
+    return { exito: false, mensaje: "Error al eliminar usuario: " + e.message };
   }
 }
 

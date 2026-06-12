@@ -246,7 +246,8 @@ body {
   text-transform: uppercase;
 }
 .topbar-usuario { font-size: 0.88rem; color: rgba(255,255,255,.8); }
-.btn-salir {
+.user-menu { position: relative; }
+.btn-user-menu {
   background: none;
   border: none;
   color: rgba(255,255,255,.5);
@@ -257,7 +258,34 @@ body {
   border-radius: 4px;
   transition: color .15s;
 }
-.btn-salir:hover { color: #fff; }
+.btn-user-menu:hover { color: #fff; }
+.user-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  min-width: 170px;
+  z-index: 100;
+  overflow: hidden;
+}
+.user-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: .88rem;
+  color: var(--texto-principal);
+  transition: background .12s;
+}
+.user-menu-item:hover { background: var(--fondo); }
+.user-menu-salir { color: var(--rojo); }
+.user-menu-separador { border: none; border-top: 1px solid var(--borde); margin: 4px 0; }
 
 /* ───────────────────────────────────────
    NAVEGACIÓN POR TABS
@@ -758,6 +786,29 @@ body {
   0%, 100% { opacity: 1; }
   50% { opacity: .4; }
 }
+
+/* ───────────────────────────────────────
+   MODAL GESTIÓN DE USUARIOS
+─────────────────────────────────────── */
+.modal-usuarios { max-width: 600px; }
+.usuarios-barra {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.usuarios-buscador { flex: 1; }
+.usuarios-tabla-wrapper { max-height: 340px; overflow-y: auto; }
+.usuarios-tabla { width: 100%; font-size: .85rem; }
+.usuarios-tabla th { text-align: left; font-weight: 600; color: var(--texto-extra); font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; padding: 6px 8px; border-bottom: 2px solid var(--borde); }
+.usuarios-tabla td { padding: 8px; border-bottom: 1px solid var(--borde); }
+.usuarios-col-acciones { width: 80px; text-align: center; }
+.usuarios-acciones { display: flex; gap: 6px; justify-content: center; }
+.usuarios-acciones button { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px; color: var(--texto-extra); transition: color .12s; }
+.usuarios-acciones button:hover { color: var(--azul-claro); }
+.usuarios-acciones .btn-eliminar:hover { color: var(--rojo); }
+.usuarios-vacio { text-align: center; color: var(--texto-extra); padding: 24px 0; font-size: .9rem; }
+.modal-usuario-form { max-width: 420px; }
 
 /* ───────────────────────────────────────
    RESPONSIVE
