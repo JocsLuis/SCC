@@ -41,20 +41,6 @@ const CONFIG = {
     "Plataforma Virtual"
   ],
 
-  // Áreas que pertenecen al departamento "SAC" (referencia documental)
-  // La asignación usa AREAS_ACADEMIA; todo lo que no coincide va a SAC
-  AREAS_SAC: [
-    "Servicio al Estudiante",
-    "Inscripciones",
-    "Instalaciones",
-    "Administración",
-    "Seguridad",
-    "Cafetería",
-    "Eventos Culturales",
-    "Atención al Cliente",
-    "Otros"
-  ],
-
   ESTADOS: {
     PENDIENTE:   "Pendiente",
     EN_PROCESO:  "En Proceso",
@@ -657,5 +643,4 @@ function testSistema() {
   const stats = getEstadisticas();
   Logger.log("Estadísticas: " + JSON.stringify(stats, null, 2));
 
-  Logger.log("=== TEST COMPLETADOAAAAAAAAAAA ===");
 }

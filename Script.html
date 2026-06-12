@@ -177,15 +177,17 @@ function obtenerFiltros() {
 // ─────────────────────────────────────
 
 function actualizarKPIs(casos) {
-  const total     = casos.length;
-  const pendiente = casos.filter(c => c.estado === "Pendiente").length;
-  const proceso   = casos.filter(c => c.estado === "En Proceso").length;
-  const resuelto  = casos.filter(c => c.estado === "Resuelto").length;
-
-  animarNumero("kpiTotal",    total);
-  animarNumero("kpiPendiente",pendiente);
-  animarNumero("kpiProceso",  proceso);
-  animarNumero("kpiResuelto", resuelto);
+  const total = casos.length;
+  let pendiente = 0, proceso = 0, resuelto = 0;
+  for (const c of casos) {
+    if (c.estado === "Pendiente") pendiente++;
+    else if (c.estado === "En Proceso") proceso++;
+    else if (c.estado === "Resuelto") resuelto++;
+  }
+  animarNumero("kpiTotal",     total);
+  animarNumero("kpiPendiente", pendiente);
+  animarNumero("kpiProceso",   proceso);
+  animarNumero("kpiResuelto",  resuelto);
 }
 
 function animarNumero(id, destino) {
@@ -310,7 +312,7 @@ function abrirDetalle(filaNum) {
       <div><p class="detalle-campo">Estado</p><p class="detalle-valor"><span class="badge ${badgeEstado(caso.estado)}">${esc(caso.estado)}</span></p></div>
       <div><p class="detalle-campo">Sede</p><p class="detalle-valor">${esc(caso.sede)}</p></div>
       <div><p class="detalle-campo">Área / Programa</p><p class="detalle-valor">${esc(caso.areaPrograma)}</p></div>
-      <div><p class="detalle-campo">Departamento</p><p class="detalle-valor"><span class="badge badge-${caso.departamento.toLowerCase()}">${esc(caso.departamento)}</span></p></div>
+      <div><p class="detalle-campo">Departamento</p><p class="detalle-valor"><span class="badge badge-${(caso.departamento || "").toLowerCase()}">${esc(caso.departamento || "")}</span></p></div>
       <div><p class="detalle-campo">Tipo</p><p class="detalle-valor">${esc(caso.tipoPlanteamiento)}</p></div>
       <div><p class="detalle-campo">Nivel</p><p class="detalle-valor">${esc(caso.nivel) || "—"}</p></div>
       <div><p class="detalle-campo">Categoría</p><p class="detalle-valor">${esc(caso.categoriaCurso) || "—"}</p></div>
@@ -325,13 +327,13 @@ function abrirDetalle(filaNum) {
     <p class="detalle-campo">Descripción del caso</p>
     <div class="detalle-descripcion">${esc(caso.descripcion)}</div>
     ${caso.accionSolicitada ? `
-      <p class="detalle-campo" style="margin-top:14px">Acción solicitada</p>
-      <div class="detalle-descripcion" style="border-left-color:var(--dorado)">${esc(caso.accionSolicitada)}</div>
+      <p class="detalle-campo detalle-accion-top">Acción solicitada</p>
+      <div class="detalle-descripcion detalle-accion">${esc(caso.accionSolicitada)}</div>
     ` : ""}
     ${caso.comentarios ? `
       <hr class="modal-separador">
       <p class="detalle-campo">Comentarios de resolución</p>
-      <div class="detalle-descripcion" style="border-left-color:var(--verde)">${esc(caso.comentarios)}</div>
+      <div class="detalle-descripcion detalle-comentario">${esc(caso.comentarios)}</div>
     ` : ""}
   `;
 
@@ -360,7 +362,7 @@ function abrirModalTomar(filaNum) {
 
   document.getElementById("modalTitulo").textContent = "Tomar Caso";
   document.getElementById("modalCuerpo").innerHTML = `
-    <p style="margin-bottom:16px;color:var(--texto-suave);font-size:.9rem">
+    <p class="modal-confirmacion">
       Confirma que tomarás el caso <strong>${esc(caso.idCaso)}</strong> de <strong>${esc(caso.nombreAlumno)}</strong>.
     </p>
     <div class="campo-grupo">
@@ -424,12 +426,12 @@ function abrirModalResolver(filaNum) {
     </div>
     <div class="campo-grupo">
       <label class="campo-label" for="textareaComentarios">
-        Comentarios de solución <span style="color:var(--rojo)">*</span>
+        Comentarios de solución <span class="campo-obligatorio">*</span>
       </label>
       <textarea id="textareaComentarios" class="campo-input"
         rows="4"
         placeholder="Describe detalladamente la solución aplicada…"
-        style="resize:vertical;min-height:90px"></textarea>
+        class="campo-input campo-textarea-solucion"></textarea>
     </div>
   `;
   document.getElementById("modalPie").innerHTML = `
@@ -852,8 +854,8 @@ function mostrarNotificacionEnvivo(caso, cantidad) {
 
 function abrirHojaCalculo() {
   google.script.run
-    .withSuccessHandler(function(url) { window.open(url, "_blank"); })
-    .withFailureHandler(function(err) { mostrarToast("Error al obtener URL: " + err.message, "error"); })
+    .withSuccessHandler((url) => { window.open(url, "_blank"); })
+    .withFailureHandler((err) => { mostrarToast("Error al obtener URL: " + err.message, "error"); })
     .getUrlHojaCalculo();
 }
 </script>
