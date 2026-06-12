@@ -95,7 +95,7 @@ function cambiarTab(tabId) {
   if (tabId === "envivo") {
     cargarCasosEnVivo();
     if (!App.timerIdEnVivo) {
-      App.timerIdEnVivo = setInterval(verificarCasosNuevosEnVivo, 15 * 60 * 1000);
+      App.timerIdEnVivo = setInterval(verificarCasosNuevosEnVivo, 5 * 60 * 1000);
     }
   } else {
     if (App.timerIdEnVivo) {
