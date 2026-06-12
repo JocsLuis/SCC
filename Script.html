@@ -966,6 +966,11 @@ function buscarUsuarios(query) {
 // ----------------------------------------
 
 function cerrarModalUsuario() {
+  const btnGuardar = document.querySelector("#modalUsuarioFondo .btn-exito");
+  if (btnGuardar) {
+    btnGuardar.disabled = false;
+    btnGuardar.textContent = "Guardar";
+  }
   document.getElementById("modalUsuarioFondo").classList.add("oculto");
 }
 
@@ -1013,7 +1018,15 @@ function guardarUsuario() {
   const usuario = { nombre, correo, telefono, sede, departamento: depto };
 
   const esEdicion = !!fila;
+  const btnGuardar = document.querySelector("#modalUsuarioFondo .btn-exito");
+
+  // Deshabilitar botón y mostrar loading
+  btnGuardar.disabled = true;
+  btnGuardar.textContent = "Guardando...";
+
   const handler = (res) => {
+    btnGuardar.disabled = false;
+    btnGuardar.textContent = "Guardar";
     if (res.exito) {
       mostrarToast(res.mensaje, "exito");
       cerrarModalUsuario();
@@ -1023,15 +1036,21 @@ function guardarUsuario() {
     }
   };
 
+  const errorHandler = (err) => {
+    btnGuardar.disabled = false;
+    btnGuardar.textContent = "Guardar";
+    mostrarToast("Error: " + err.message, "error");
+  };
+
   if (esEdicion) {
     google.script.run
       .withSuccessHandler(handler)
-      .withFailureHandler(err => mostrarToast("Error: " + err.message, "error"))
+      .withFailureHandler(errorHandler)
       .editarUsuario(parseInt(fila), usuario);
   } else {
     google.script.run
       .withSuccessHandler(handler)
-      .withFailureHandler(err => mostrarToast("Error: " + err.message, "error"))
+      .withFailureHandler(errorHandler)
       .crearUsuario(usuario);
   }
 }
